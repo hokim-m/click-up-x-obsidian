@@ -90,6 +90,8 @@ export class MainAppModal extends Modal {
 	async renderSettings() {
 		const { contentEl } = this;
 
+		let isOpenSigninModal: boolean = false;
+
 		contentEl.empty();
 		// Step 1: Create HTML elements
 		if (!localStorage.getItem("token")) {
@@ -233,13 +235,15 @@ export class MainAppModal extends Modal {
 				// Step 3: Open link in a new browser tab/window
 				// Step 3: Add loading style
 
-				if (!localStorage.getItem("token")) {
+				if (isOpenSigninModal) {
 					this.renderAuthrization();
+					isOpenSigninModal = false;
 				} else {
 					button.disabled = true;
 					button.textContent = "Loading...";
 					button.style.backgroundColor = "gray";
 					localStorage.removeItem("token");
+					isOpenSigninModal = true;
 
 					setTimeout(async () => {
 						button.textContent = "Sign-in.";
