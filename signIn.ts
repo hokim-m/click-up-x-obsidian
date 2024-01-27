@@ -1,4 +1,4 @@
-import { App, Modal, Setting } from "obsidian";
+import { Modal } from "obsidian";
 import MyPlugin from "./main";
 import {
 	getFolderlessList,
@@ -8,6 +8,8 @@ import {
 	getToken,
 } from "./api";
 import { createFolder } from "./app";
+import { SIGNIN_STEPS } from "components/constants";
+import { createInputWithPlaceholder } from "components/utils";
 
 export class MainAppModal extends Modal {
 	result: string;
@@ -22,46 +24,63 @@ export class MainAppModal extends Modal {
 
 	renderAuthrization() {
 		const { contentEl } = this;
+		contentEl.empty();
+
+		const plugin = this.plugin;
+
 		// Step 1: Create HTML elements
 		const container = document.createElement("div");
 		const title = document.createElement("h1");
 		const description = document.createElement("p");
 		const button = document.createElement("button");
+		const steps = document.createElement("div");
+		const input = createInputWithPlaceholder("Code", "Enter code", true);
+
+		SIGNIN_STEPS.forEach((stepItem) => {
+			const step = document.createElement("p");
+			step.textContent = stepItem;
+			steps.appendChild(step);
+		});
 
 		// Step 2: Set content and attributes
 		title.textContent = "Click Up sync";
 		description.textContent =
 			"We need to retreive authroized token from ClickUp to start syncronizing your tasks from Obsidian notes";
 		button.textContent = "Sign In";
-		const plugin = this.plugin;
 
 		button.addEventListener("click", async () => {
-			button.disabled = true;
-			button.textContent = "Loading...";
-			button.style.backgroundColor = "gray";
+			const inputValue = input.element.value;
 
-			// window.open(
-			// 	"https://app.clickup.com/api?client_id=TGKZSPVNT4Z5VWFN4PG5YC8WK9BCJ5YX&redirect_uri=dedicated.agency",
-			// 	"_blank"
-			// );
-			console.log('try to retrevice code ')
-
-			const token = await getToken();
-			if (token) {
-				localStorage.setItem("token", token);
-				await plugin.fetchUser(token);
+			if (!inputValue) {
+				window.open(
+					"https://app.clickup.com/api?client_id=TGKZSPVNT4Z5VWFN4PG5YC8WK9BCJ5YX&redirect_uri=https://clickup.dedicated.agency/obsidian",
+					"_blank",
+				);
 			}
-			setTimeout(() => {
-				// Step 4: Change text and style to "Success"
-				button.textContent = "Success";
-				button.style.backgroundColor = "green";
-				this.renderSettings();
-			}, 1200);
+
+			let token;
+
+			if (inputValue) {
+				button.disabled = true;
+				button.textContent = "Loading...";
+				button.style.backgroundColor = "gray";
+
+				token = await getToken(inputValue);
+				if (token) {
+					await plugin.fetchUser(token);
+
+					button.textContent = "Success";
+					button.style.backgroundColor = "green";
+					this.renderSettings();
+				}
+			}
 		});
 
 		// Step 3: Append elements to parent element
+		steps.appendChild(input.element);
 		container.appendChild(title);
 		container.appendChild(description);
+		container.appendChild(steps);
 		container.appendChild(button);
 
 		contentEl.appendChild(container);
@@ -70,152 +89,173 @@ export class MainAppModal extends Modal {
 
 	async renderSettings() {
 		const { contentEl } = this;
+
+		contentEl.empty();
 		// Step 1: Create HTML elements
-		const container = document.createElement("div");
-		const title = document.createElement("h1");
-		const description = document.createElement("p");
-		const button = document.createElement("button");
+		if (!localStorage.getItem("token")) {
+			this.renderAuthrization();
+		} else {
+			const container = document.createElement("div");
+			const title = document.createElement("h1");
+			const description = document.createElement("p");
+			const button = document.createElement("button");
 
-		const { user, teams } = this.plugin.settings;
-		// Step 2: Set content and attributes
-		title.textContent = "Click Up sync | Authorized";
+			const { user, teams } = this.plugin.settings;
+			// Step 2: Set content and attributes
+			title.textContent = "Click Up sync | Authorized";
 
-		let textContent = `<div>User: ${user.username}<${user.email}></div>\n`;
-		textContent += `<div>Workspaces: ${teams.map(
-			(team) =>
-				`${team.name}[Members: ${team.members
-					.map((u: any) => u.user.username)
-					.join(",")}]`
-		)} </div>`;
+			let textContent = `<div>User: ${user.username}<${user.email}></div>\n`;
+			textContent += `<div>Workspaces: ${teams.map(
+				(team) =>
+					`${team.name}[Members: ${team.members
+						.map(
+							(u: any) =>
+								`<div style="margin-top:10px">${u.user.username}</div>`,
+						)
+						.join(",")}]`,
+			)} </div>`;
 
-		textContent += `<div style="display: flex; justify-content: space-between"><span>Last syncronized: 20 Dec 15:17:20</span><div>force sync</div> `;
-		description.innerHTML = textContent;
+			textContent += `<div style="display: flex; justify-content: space-between"><span>Last syncronized: 20 Dec 15:17:20</span><button>force sync</button> `;
+			description.innerHTML = textContent;
 
-		function createTable(data: any) {
-			const table = document.createElement("table");
-			table.classList.add("my-table");
+			function createTable(data: any) {
+				const table = document.createElement("table");
+				table.classList.add("my-table");
 
-			// Create table header
-			const thead = document.createElement("thead");
-			const headerRow = document.createElement("tr");
-			const headers = [
-				"ID",
-				"Order",
-				"Name",
-				"Status",
-				"Date Created",
-				"Creator",
-				"Assignee",
-				"Priority",
-			];
-			headers.forEach((headerText) => {
-				const th = document.createElement("th");
-				th.textContent = headerText;
-				headerRow.appendChild(th);
-			});
-			thead.appendChild(headerRow);
-			table.appendChild(thead);
-
-			// Create table body
-			const tbody = document.createElement("tbody");
-			data.forEach((task) => {
-				const row = document.createElement("tr");
-				Object.values(task).forEach((value) => {
-					const cell = document.createElement("td");
-					if (Array.isArray(value)) {
-						const select = document.createElement("select");
-						value.map(String).forEach((item) => {
-							const option = document.createElement("option");
-							option.value = item;
-							option.textContent = item;
-							select.appendChild(option);
-						});
-						cell.appendChild(select);
-					} else {
-						cell.textContent = String(value);
-					}
-					row.appendChild(cell);
+				// Create table header
+				const thead = document.createElement("thead");
+				const headerRow = document.createElement("tr");
+				const headers = [
+					"ID",
+					"Order",
+					"Name",
+					"Status",
+					"Date Created",
+					"Creator",
+					"Assignee",
+					"Priority",
+				];
+				headers.forEach((headerText) => {
+					const th = document.createElement("th");
+					th.textContent = headerText;
+					headerRow.appendChild(th);
 				});
-				tbody.appendChild(row);
-			});
-			table.appendChild(tbody);
+				thead.appendChild(headerRow);
+				table.appendChild(thead);
 
-			// Return the table as a string
-			return table.outerHTML;
-		}
+				// Create table body
+				const tbody = document.createElement("tbody");
+				data.forEach((task: any) => {
+					const row = document.createElement("tr");
+					Object.values(task).forEach((value) => {
+						const cell = document.createElement("td");
+						if (Array.isArray(value)) {
+							const select = document.createElement("select");
+							value.map(String).forEach((item) => {
+								const option = document.createElement("option");
+								option.value = item;
+								option.textContent = item;
+								select.appendChild(option);
+							});
+							cell.appendChild(select);
+						} else {
+							cell.textContent = String(value);
+						}
+						row.appendChild(cell);
+					});
+					tbody.appendChild(row);
+				});
+				table.appendChild(tbody);
 
-		description.addEventListener("click", async () => {
-			//do send requests
-			//fetch teams, spaces, folders, lists, forderless list from clickapi
-			//fetch team / spaces
+				// Return the table as a string
+				return table.outerHTML;
+			}
 
-			const vaultPath = localStorage.getItem("path");
-			createFolder(`${vaultPath}/ClickUp`);
-			for (const team of teams) {
-				createFolder(`${vaultPath}/ClickUp/${team.name}`);
-				const spaces = await getSpaces(team.id);
-				for (const space of spaces) {
-					createFolder(
-						`${vaultPath}/ClickUp/${team.name}/${space.name} - [${space.id}]`
-					);
-					const folders = await getFolders(space.id);
+			description.addEventListener("click", async () => {
+				//do send requests
+				//fetch teams, spaces, folders, lists, forderless list from clickapi
+				//fetch team / spaces
 
-					for (const folder of folders || []) {
-						// const list = await getList(folder.id)
+				const vaultPath = localStorage.getItem("path");
+				createFolder(`${vaultPath}/ClickUp`);
+				for (const team of teams) {
+					createFolder(`${vaultPath}/ClickUp/${team.name}`);
+					const spaces = await getSpaces(team.id);
+					for (const space of spaces) {
 						createFolder(
-							`${vaultPath}/ClickUp/${team.name}/${space.name} - [${space.id}]/${folder.name}`
+							`${vaultPath}/ClickUp/${team.name}/${space.name} - [${space.id}]`,
 						);
-					}
+						const folders = await getFolders(space.id);
 
-					const folderless = await getFolderlessList(space.id);
-					for (const list_item of folderless) {
-						const vault = this.plugin.app.vault;
-						const tasks = await getTasks(list_item.id);
-						const rows = tasks.map((task: any, index) => {
-							return {
-								id: task.id,
-								order: index + 1,
-								name: task.name,
-								status: task.status.status,
-								date_created: new Date(
-									Number(task.date_created)
-								).toLocaleString("en-US"),
-								creator: task.creator.username,
-								assignees: task.assignees.map(
-									(u: any) => u.username
-								),
-								priority: ["Low", "Medium", "High", "Critical"],
-							};
-						});
-						const tableHTML = createTable(rows);
-						const filePath = `/ClickUp/${team.name}/${space.name} - [${space.id}]/${list_item.name}[${list_item.id}].md`;
-						console.log(filePath);
-						vault.create(filePath, tableHTML);
+						for (const folder of folders || []) {
+							// const list = await getList(folder.id)
+							createFolder(
+								`${vaultPath}/ClickUp/${team.name}/${space.name} - [${space.id}]/${folder.name}`,
+							);
+						}
+
+						const folderless = await getFolderlessList(space.id);
+						for (const list_item of folderless) {
+							const vault = this.plugin.app.vault;
+							const tasks = await getTasks(list_item.id);
+							const rows = tasks.map((task: any, index: any) => {
+								return {
+									id: task.id,
+									order: index + 1,
+									name: task.name,
+									status: task.status.status,
+									date_created: new Date(
+										Number(task.date_created),
+									).toLocaleString("en-US"),
+									creator: task.creator.username,
+									assignees: task.assignees.map(
+										(u: any) => u.username,
+									),
+									priority: [
+										"Low",
+										"Medium",
+										"High",
+										"Critical",
+									],
+								};
+							});
+							const tableHTML = createTable(rows);
+							const filePath = `/ClickUp/${team.name}/${space.name} - [${space.id}]/${list_item.name}[${list_item.id}].md`;
+							console.log(filePath);
+							vault.create(filePath, tableHTML);
+						}
 					}
 				}
-			}
-		});
-		button.textContent = "Log out";
+			});
+			button.textContent = "Log out";
 
-		button.addEventListener("click", () => {
-			// Step 3: Open link in a new browser tab/window
-			// Step 3: Add loading style
-			button.disabled = true;
-			button.textContent = "Loading...";
-			button.style.backgroundColor = "gray";
+			button.addEventListener("click", () => {
+				// Step 3: Open link in a new browser tab/window
+				// Step 3: Add loading style
 
-			setTimeout(async () => {
-				this.plugin.clearUser();
-				this.onOpen();
-			}, 1200);
-		});
+				if (!localStorage.getItem("token")) {
+					this.renderAuthrization();
+				} else {
+					button.disabled = true;
+					button.textContent = "Loading...";
+					button.style.backgroundColor = "gray";
+					localStorage.removeItem("token");
 
-		// Step 3: Append elements to parent element
-		container.appendChild(title);
-		container.appendChild(description);
-		container.appendChild(button);
+					setTimeout(async () => {
+						button.textContent = "Sign-in.";
+						button.disabled = false;
+						this.plugin.clearUser();
+					}, 1200);
+				}
+			});
 
-		contentEl.appendChild(container);
+			// Step 3: Append elements to parent element
+			container.appendChild(title);
+			container.appendChild(description);
+			container.appendChild(button);
+
+			contentEl.appendChild(container);
+		}
 	}
 
 	async initView() {
@@ -234,7 +274,7 @@ export class MainAppModal extends Modal {
 
 			try {
 				const response: any = await this.plugin.fetchUser(
-					this.plugin.settings.token
+					this.plugin.settings.token,
 				);
 				if (response) {
 					this.plugin.settings.user = response;
