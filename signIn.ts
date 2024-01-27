@@ -235,22 +235,17 @@ export class MainAppModal extends Modal {
 				// Step 3: Open link in a new browser tab/window
 				// Step 3: Add loading style
 
-				if (isOpenSigninModal) {
-					this.renderAuthrization();
-					isOpenSigninModal = false;
-				} else {
-					button.disabled = true;
-					button.textContent = "Loading...";
-					button.style.backgroundColor = "gray";
-					localStorage.removeItem("token");
-					isOpenSigninModal = true;
+				button.disabled = true;
+				button.textContent = "Loading...";
+				button.style.backgroundColor = "gray";
+				localStorage.removeItem("token");
+				isOpenSigninModal = true;
 
-					setTimeout(async () => {
-						button.textContent = "Sign-in.";
-						button.disabled = false;
-						this.plugin.clearUser();
-					}, 1200);
-				}
+				setTimeout(async () => {
+					button.disabled = false;
+					this.plugin.clearUser();
+					this.renderAuthrization();
+				}, 1200);
 			});
 
 			// Step 3: Append elements to parent element
