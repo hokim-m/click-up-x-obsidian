@@ -1,3 +1,4 @@
+import { CreateTaskModal } from "./components/CreateTaskModal";
 import {
 	App,
 	Editor,
@@ -12,7 +13,21 @@ import { MainAppModal } from "./signIn";
 import "./main.css";
 import { getAuthorizedUser, getTeams } from "./api";
 
+import * as dotenv from "dotenv";
+import { SigninRequiredModal } from "components/SigninRequired";
+
+const basePath = (app.vault.adapter as any).basePath;
+dotenv.config({
+	path: `${basePath}/.obsidian/plugins/click-up-x-obsidian/.env`,
+	debug: false,
+});
+
 // Remember to rename these classes and interfaces!
+
+type TClickUpRedirectParams = {
+	action: string;
+	code: string;
+};
 
 interface MyPluginSettings {
 	user: any;
@@ -28,11 +43,33 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 	token: "",
 };
 
+class SampleModal extends Modal {
+	constructor(app: App) {
+		super(app);
+	}
+
+	onOpen() {
+		const { contentEl } = this;
+		contentEl.setText("Woah!");
+	}
+
+	onClose() {
+		const { contentEl } = this;
+		contentEl.empty();
+	}
+}
+
 export default class MyPlugin extends Plugin {
 	settings: MyPluginSettings;
 
 	async onload() {
 		console.log("loaded?");
+
+		// Returns ClickUp code
+		this.registerObsidianProtocolHandler("plugin", async (e) => {
+			const parameters = e as TClickUpRedirectParams;
+			localStorage.setItem("CLICK_UP_CODE", parameters.code);
+		});
 
 		function getVaultPath() {
 			const vaultAdapter = app.vault.adapter;
@@ -59,7 +96,7 @@ export default class MyPlugin extends Plugin {
 				new MainAppModal(this, (result) => {
 					new Notice(`Hello, ${result}!`);
 				}).open();
-			}
+			},
 		);
 		// Perform additional things with the ribbon
 		ribbonIconEl.addClass("my-plugin-ribbon-class");
@@ -68,11 +105,22 @@ export default class MyPlugin extends Plugin {
 		const statusBarItemEl = this.addStatusBarItem();
 		statusBarItemEl.setText("Status Bar Text");
 
-		// This adds a simple command that can be triggered anywhere
+		this.addCommand({
+			id: "create-task",
+			name: "Create ClickUp task",
+			callback: async () => {
+				if (!this.settings.token) {
+					new SigninRequiredModal(this.app).open();
+				} else {
+					new CreateTaskModal(this.app).open();
+				}
+			},
+		});
+
 		this.addCommand({
 			id: "open-sample-modal-simple",
 			name: "Open sample modal (simple)",
-			callback: () => {
+			callback: async () => {
 				new SampleModal(this.app).open();
 			},
 		});
@@ -85,6 +133,7 @@ export default class MyPlugin extends Plugin {
 				editor.replaceSelection("Sample Editor Command");
 			},
 		});
+
 		// This adds a complex command that can check whether the current state of the app allows execution of the command
 		this.addCommand({
 			id: "open-sample-modal-complex",
@@ -112,12 +161,12 @@ export default class MyPlugin extends Plugin {
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
 		this.registerDomEvent(document, "click", (evt: MouseEvent) => {
-			console.log("click", evt);
+			// console.log("click", evt);
 		});
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		this.registerInterval(
-			window.setInterval(() => console.log("setInterval"), 5 * 60 * 1000)
+			window.setInterval(() => console.log("setInterval"), 5 * 60 * 1000),
 		);
 	}
 
@@ -140,28 +189,12 @@ export default class MyPlugin extends Plugin {
 		this.settings = Object.assign(
 			{},
 			DEFAULT_SETTINGS,
-			await this.loadData()
+			await this.loadData(),
 		);
 	}
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-}
-
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.setText("Woah!");
-	}
-
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
 	}
 }
 
@@ -188,7 +221,7 @@ class SampleSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.mySetting = value;
 						await this.plugin.saveSettings();
-					})
+					}),
 			);
 	}
 }

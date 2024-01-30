@@ -1,11 +1,7 @@
-const CLICK_UP_CLIENT = "";
-const CLICK_UP_CODE = ""; //retreiving from browser auth0
-const CLICK_UP_SECRET =
-	"";
-const TOKEN =
-	"";
-
-const PROXY_HOST = "http://localhost:3000/proxy";
+const CLICK_UP_CLIENT = process.env.CLICK_UP_CLIENT;
+const CLICK_UP_SECRET = process.env.CLICK_UP_SECRET;
+const TOKEN = process.env.TOKEN;
+const PROXY_HOST = process.env.PROXY_HOST;
 
 const fetcher = (url: string, options: any = {}) => {
 	const token = localStorage.getItem("token");
@@ -13,19 +9,26 @@ const fetcher = (url: string, options: any = {}) => {
 	return fetch(`${PROXY_HOST}${url}`, options);
 };
 
-export const getToken = async () => {
+export const getToken = async (code: string | undefined) => {
 	const query = new URLSearchParams({
 		client_id: CLICK_UP_CLIENT,
 		client_secret: CLICK_UP_SECRET,
-		code: CLICK_UP_CODE,
+		code: code,
 	}).toString();
 
-	const resp = await fetcher(`/api/v2/oauth/token?${query}`, {
-		method: "POST",
-	});
-
-	const data = await resp.json();
-	console.log(data);
+	try {
+		const resp = await fetcher(`/api/v2/oauth/token?${query}`, {
+			method: "POST",
+		});
+		const data = (await resp.json()) as {
+			access_token: string;
+			type: string;
+		};
+		localStorage.setItem("token", data.access_token);
+		return data.access_token;
+	} catch (error: any) {
+		console.error("Error during getToken()", error);
+	}
 
 	return TOKEN;
 };
