@@ -1,4 +1,4 @@
-import { Modal } from "obsidian";
+import { Modal, Notice } from "obsidian";
 import "../main.css";
 import {
 	applyStylesToContainer,
@@ -26,7 +26,7 @@ export class CreateTaskModal extends Modal {
 		const lists: { id: string; name: string }[] = JSON.parse(
 			localStorage.getItem("lists"),
 		);
-		const listSelects = lists.map((item) => ({
+		const listSelects = lists?.map((item) => ({
 			text: item.name,
 			value: item.id,
 		}));
@@ -188,8 +188,11 @@ export class CreateTaskModal extends Modal {
 			});
 			btn.textContent = "Success";
 			btn.style.backgroundColor = "green";
+			new Notice("Task created successfully!", 3000);
 
-			this.close();
+			setTimeout(() => {
+				this.close();
+			}, 3000);
 		} catch (error) {
 			console.log(error);
 			btn.textContent = "Error";
