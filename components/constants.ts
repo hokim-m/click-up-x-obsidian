@@ -4,15 +4,20 @@ export const assigneeSelectOptions = [
 	{ value: "option2Value", text: "assignee 2" },
 ];
 
-export const listSelectOptions = [
-	{ value: "", text: "Lists" },
-	{ value: "option1Value", text: "list 1" },
-	{ value: "option2Value", text: "list 2" },
-];
+export const firstListOption = {
+	text: "Lists",
+	value: "",
+};
+export const firstAssigneeOption = {
+	text: "Assignees",
+	value: "",
+};
 export const prioritySelectOptions = [
 	{ value: "", text: "Priorities" },
-	{ value: "option1Value", text: "priority 1" },
-	{ value: "option2Value", text: "priority 2" },
+	{ value: 1, text: "Urgent" },
+	{ value: 2, text: "High" },
+	{ value: 3, text: "Normal" },
+	{ value: 4, text: "Low" },
 ];
 
 export const SIGNIN_STEPS: string[] = [

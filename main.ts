@@ -112,7 +112,7 @@ export default class MyPlugin extends Plugin {
 				if (!this.settings.token) {
 					new SigninRequiredModal(this.app).open();
 				} else {
-					new CreateTaskModal(this.app).open();
+					new CreateTaskModal(this).open();
 				}
 			},
 		});

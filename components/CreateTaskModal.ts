@@ -1,4 +1,4 @@
-import { App, Modal, prepareQuery } from "obsidian";
+import { Modal } from "obsidian";
 import "../main.css";
 import {
 	applyStylesToContainer,
@@ -8,17 +8,33 @@ import {
 	validateForm,
 } from "./utils";
 import {
-	assigneeSelectOptions,
-	listSelectOptions,
+	firstAssigneeOption,
+	firstListOption,
 	prioritySelectOptions,
 } from "./constants";
+import { createTask, getListMembers } from "api";
+import MyPlugin from "main";
+import { TCreateTask, TMember } from "api.types";
 
 export class CreateTaskModal extends Modal {
-	constructor(app: App) {
-		super(app);
+	plugin: MyPlugin;
+	constructor(plugin: MyPlugin) {
+		super(plugin.app);
 	}
 
 	onOpen() {
+		const lists: { id: string; name: string }[] = JSON.parse(
+			localStorage.getItem("lists"),
+		);
+		const listSelects = lists.map((item) => ({
+			text: item.name,
+			value: item.id,
+		}));
+
+		let listMember: TMember[] = [];
+
+		const listSelectOptions = [firstListOption, ...listSelects];
+
 		const { contentEl } = this;
 
 		const container = document.createElement("div");
@@ -31,7 +47,35 @@ export class CreateTaskModal extends Modal {
 			"Select list",
 			true,
 		);
+		const assigneeSelectOptions = [firstAssigneeOption, ...listMember];
+
+		listSelect.element.addEventListener("change", async () => {
+			console.log("list select value", listSelect.element.value);
+
+			const members = await getListMembers(listSelect.element.value);
+
+			listMember = members.map((member) => ({
+				...member,
+				value: member.id,
+				text: member.username,
+			}));
+
+			assigneeSelectOptions.length = 0;
+			assigneeSelectOptions.push(...[firstAssigneeOption, ...listMember]);
+
+			// Refresh the assigneeSelect with updated options
+			assigneeSelect.element.innerHTML = assigneeSelectOptions
+				.map(
+					(option) =>
+						`<option value="${option.value}">${option.text}</option>`,
+				)
+				.join("");
+
+			console.log("listMember", listMember);
+		});
+
 		const assigneeSelect = createSelectWithOptions(
+			//@ts-ignore
 			assigneeSelectOptions,
 			"Select assignee",
 			true,
@@ -83,13 +127,16 @@ export class CreateTaskModal extends Modal {
 			console.clear();
 			if (validateForm(container)) {
 				errorMessage.style.visibility = "hidden";
-				this.handleFormSubmit({
-					title: getElementValue(titleInput),
-					assignee: getElementValue(assigneeSelect),
-					description: getElementValue(descriptionInput),
-					list: getElementValue(listSelect),
-					priority: getElementValue(prioritySelect),
-				});
+				this.handleFormSubmit(
+					{
+						title: getElementValue(titleInput),
+						assignee: getElementValue(assigneeSelect),
+						description: getElementValue(descriptionInput),
+						list: getElementValue(listSelect),
+						priority: getElementValue(prioritySelect),
+					},
+					submitButton,
+				);
 			} else {
 				errorMessage.style.color = "red";
 				errorMessage.style.fontSize = "14px";
@@ -114,18 +161,41 @@ export class CreateTaskModal extends Modal {
 		contentEl.empty();
 	}
 
-	private handleFormSubmit(data: {
-		title: string;
-		description: string;
-		list: string;
-		assignee: string;
-		priority: string;
-	}) {
+	private async handleFormSubmit(
+		data: {
+			title: string;
+			description: string;
+			list: string;
+			assignee: string;
+			priority: string;
+		},
+		btn: HTMLButtonElement,
+	) {
 		const { assignee, description, list, priority, title } = data;
-		console.log("Title:", title);
-		console.log("Description:", description);
-		console.log("List:", list);
-		console.log("Assignee:", assignee);
-		console.log("Priority:", priority);
+		btn.textContent = "Loading...";
+		btn.disabled = true;
+
+		const requestData: TCreateTask = {
+			name: title,
+			description: description,
+			assignees: [Number(assignee)],
+			priority: Number(priority),
+		};
+		try {
+			const createdTask = await createTask({
+				data: requestData,
+				listId: list,
+			});
+			btn.textContent = "Success";
+			btn.style.backgroundColor = "green";
+
+			this.close();
+		} catch (error) {
+			console.log(error);
+			btn.textContent = "Error";
+			btn.style.backgroundColor = "red";
+		} finally {
+			btn.disabled = false;
+		}
 	}
 }
