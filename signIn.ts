@@ -21,6 +21,58 @@ interface IList {
 	name: string;
 	id: string;
 }
+export const createTable = (data: any) => {
+	const table = document.createElement("table");
+	table.classList.add("my-table");
+
+	// Create table header
+	const thead = document.createElement("thead");
+	const headerRow = document.createElement("tr");
+	const headers = [
+		"Order",
+		"Name",
+		"Status",
+		"Date Created",
+		"Creator",
+		"Assignee",
+		"Priority",
+	];
+	headers.forEach((headerText) => {
+		const th = document.createElement("th");
+		th.textContent = headerText;
+		headerRow.appendChild(th);
+	});
+	thead.appendChild(headerRow);
+	table.appendChild(thead);
+
+	// Create table body
+	const tbody = document.createElement("tbody");
+	data.forEach((task: any) => {
+		const row = document.createElement("tr");
+		Object.values(task).forEach((value) => {
+			const cell = document.createElement("td");
+			if (Array.isArray(value)) {
+				const select = document.createElement("select");
+				value.map(String).forEach((item) => {
+					const option = document.createElement("option");
+					option.value = item;
+					option.textContent = item;
+					select.appendChild(option);
+				});
+				cell.appendChild(select);
+			} else {
+				cell.textContent = String(value);
+			}
+			row.appendChild(cell);
+		});
+		tbody.appendChild(row);
+	});
+	table.appendChild(tbody);
+
+	// Return the table as a string
+	return table.outerHTML;
+};
+
 export class MainAppModal extends Modal {
 	result: string;
 	plugin: MyPlugin;
@@ -210,59 +262,6 @@ export class MainAppModal extends Modal {
 
 		description.innerHTML = textContent;
 
-		function createTable(data: any) {
-			const table = document.createElement("table");
-			table.classList.add("my-table");
-
-			// Create table header
-			const thead = document.createElement("thead");
-			const headerRow = document.createElement("tr");
-			const headers = [
-				"ID",
-				"Order",
-				"Name",
-				"Status",
-				"Date Created",
-				"Creator",
-				"Assignee",
-				"Priority",
-			];
-			headers.forEach((headerText) => {
-				const th = document.createElement("th");
-				th.textContent = headerText;
-				headerRow.appendChild(th);
-			});
-			thead.appendChild(headerRow);
-			table.appendChild(thead);
-
-			// Create table body
-			const tbody = document.createElement("tbody");
-			data.forEach((task: any) => {
-				const row = document.createElement("tr");
-				Object.values(task).forEach((value) => {
-					const cell = document.createElement("td");
-					if (Array.isArray(value)) {
-						const select = document.createElement("select");
-						value.map(String).forEach((item) => {
-							const option = document.createElement("option");
-							option.value = item;
-							option.textContent = item;
-							select.appendChild(option);
-						});
-						cell.appendChild(select);
-					} else {
-						cell.textContent = String(value);
-					}
-					row.appendChild(cell);
-				});
-				tbody.appendChild(row);
-			});
-			table.appendChild(tbody);
-
-			// Return the table as a string
-			return table.outerHTML;
-		}
-
 		forceSyncBtn.addEventListener("click", async () => {
 			await this.configureListsLocally();
 
@@ -290,7 +289,7 @@ export class MainAppModal extends Modal {
 						const tasks = await getTasks(list_item.id);
 						const rows = tasks.map((task: any, index: any) => {
 							return {
-								id: task.id,
+								// id: task.id,
 								order: index + 1,
 								name: task.name,
 								status: task.status.status,

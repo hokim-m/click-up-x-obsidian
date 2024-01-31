@@ -12,22 +12,51 @@ import {
 	firstListOption,
 	prioritySelectOptions,
 } from "./constants";
-import { createTask, getListMembers } from "api";
+import { createTask, getListMembers, getTasks } from "api";
 import MyPlugin from "main";
 import { TCreateTask, TMember } from "api.types";
+import { createTable } from "../signIn";
 
 export class CreateTaskModal extends Modal {
 	plugin: MyPlugin;
 	constructor(plugin: MyPlugin) {
 		super(plugin.app);
+		this.plugin = plugin;
 	}
 
-	syncronizeListNote(id: string) {
-		const files = this.plugin.app.vault
+	async syncronizeListNote(id: string) {
+		// console.log(app.vault)
+		const note = app.vault
 			.getFiles()
 			.filter((f) => f.path.startsWith("ClickUp"))
-			.map((f) => f.basename);
-		console.log(files);
+			.find((f) => f.path.includes(`[${id}]`));
+
+		if (!note) {
+			console.log('could not find note to sync')
+			return;
+		}
+
+		const vault = this.plugin.app.vault;
+		const tasks = await getTasks(id);
+		const rows = tasks.map((task: any, index: any) => {
+			return {
+				id: task.id,
+				order: index + 1,
+				name: task.name,
+				status: task.status.status,
+				date_created: new Date(
+					Number(task.date_created)
+				).toLocaleString("en-US"),
+				creator: task.creator.username,
+				assignees: task.assignees.map((u: any) => u.username),
+				priority: ["Low", "Medium", "High", "Critical"],
+			};
+		});
+		const tableHTML = createTable(rows);
+		const filePath = note!.path.toString();
+		console.log(filePath);
+		vault.delete(note!)
+		vault.create(filePath, tableHTML);
 	}
 
 	onOpen() {
@@ -38,7 +67,7 @@ export class CreateTaskModal extends Modal {
 			text: item.name,
 			value: item.id,
 		}));
-		this.syncronizeListNote(lists[0].id);
+
 		let listMember: TMember[] = [];
 
 		const listSelectOptions = [firstListOption, ...listSelects];
@@ -198,6 +227,8 @@ export class CreateTaskModal extends Modal {
 			btn.style.backgroundColor = "green";
 
 			this.close();
+
+			this.syncronizeListNote(list);
 		} catch (error) {
 			console.log(error);
 			btn.textContent = "Error";
