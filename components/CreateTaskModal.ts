@@ -22,15 +22,23 @@ export class CreateTaskModal extends Modal {
 		super(plugin.app);
 	}
 
+	syncronizeListNote(id: string) {
+		const files = this.plugin.app.vault
+			.getFiles()
+			.filter((f) => f.path.startsWith("ClickUp"))
+			.map((f) => f.basename);
+		console.log(files);
+	}
+
 	onOpen() {
 		const lists: { id: string; name: string }[] = JSON.parse(
-			localStorage.getItem("lists"),
+			localStorage.getItem("lists")
 		);
 		const listSelects = lists.map((item) => ({
 			text: item.name,
 			value: item.id,
 		}));
-
+		this.syncronizeListNote(lists[0].id);
 		let listMember: TMember[] = [];
 
 		const listSelectOptions = [firstListOption, ...listSelects];
@@ -45,7 +53,7 @@ export class CreateTaskModal extends Modal {
 		const listSelect = createSelectWithOptions(
 			listSelectOptions,
 			"Select list",
-			true,
+			true
 		);
 		const assigneeSelectOptions = [firstAssigneeOption, ...listMember];
 
@@ -67,7 +75,7 @@ export class CreateTaskModal extends Modal {
 			assigneeSelect.element.innerHTML = assigneeSelectOptions
 				.map(
 					(option) =>
-						`<option value="${option.value}">${option.text}</option>`,
+						`<option value="${option.value}">${option.text}</option>`
 				)
 				.join("");
 
@@ -78,25 +86,25 @@ export class CreateTaskModal extends Modal {
 			//@ts-ignore
 			assigneeSelectOptions,
 			"Select assignee",
-			true,
+			true
 		);
 		const prioritySelect = createSelectWithOptions(
 			prioritySelectOptions,
 			"Select priority",
-			true,
+			true
 		);
 
 		const titleInput = createInputWithPlaceholder(
 			"Title",
 			"Enter title",
-			true,
+			true
 		);
 
 		const descriptionInput = createInputWithPlaceholder(
 			"Description",
 			"Enter description",
 			true,
-			"textarea",
+			"textarea"
 		);
 
 		const containerChilds = [
@@ -135,7 +143,7 @@ export class CreateTaskModal extends Modal {
 						list: getElementValue(listSelect),
 						priority: getElementValue(prioritySelect),
 					},
-					submitButton,
+					submitButton
 				);
 			} else {
 				errorMessage.style.color = "red";
@@ -169,7 +177,7 @@ export class CreateTaskModal extends Modal {
 			assignee: string;
 			priority: string;
 		},
-		btn: HTMLButtonElement,
+		btn: HTMLButtonElement
 	) {
 		const { assignee, description, list, priority, title } = data;
 		btn.textContent = "Loading...";
