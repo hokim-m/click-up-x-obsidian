@@ -1,6 +1,8 @@
 import { Modal } from "obsidian";
 import MyPlugin from "./main";
 import {
+	getAllFolders,
+	getClickupLists,
 	getFolderlessList,
 	getFolders,
 	getSpaces,
@@ -9,7 +11,10 @@ import {
 } from "./api";
 import { createFolder } from "./app";
 import { SIGNIN_STEPS } from "components/constants";
-import { createInputWithPlaceholder } from "components/utils";
+import {
+	createInputWithPlaceholder,
+	createSelectWithOptions,
+} from "components/utils";
 
 export class MainAppModal extends Modal {
 	result: string;
@@ -89,6 +94,7 @@ export class MainAppModal extends Modal {
 
 	async renderSettings() {
 		const { contentEl } = this;
+		const allLists: any[] = [];
 
 		let isOpenSigninModal: boolean = false;
 
@@ -97,14 +103,64 @@ export class MainAppModal extends Modal {
 		if (!localStorage.getItem("token")) {
 			this.renderAuthrization();
 		} else {
+			const selectedSpace = localStorage.getItem("selectedSpace");
+
 			const container = document.createElement("div");
 			const title = document.createElement("h1");
+			const descriptionWrapper = document.createElement("div");
+			const forceSyncBtn = document.createElement("button");
+
 			const description = document.createElement("p");
 			const button = document.createElement("button");
+			const listSelect = document.createElement("select");
+			const wrapperList = document.createElement("div");
+			const disabledOption = document.createElement("option");
+
+			descriptionWrapper.appendChild(description);
+			descriptionWrapper.appendChild(forceSyncBtn);
+
+			const selectThisListContent = document.createElement("p");
+			selectThisListContent.textContent =
+				"Please select space before create task!";
+
+			disabledOption.textContent = "Spaces";
+			disabledOption.selected = true;
+
+			disabledOption.disabled = true;
+			listSelect.appendChild(disabledOption);
+			if (selectedSpace) {
+				listSelect.value = selectedSpace;
+			}
+
+			listSelect.addEventListener("change", () => {
+				localStorage.setItem("selectedSpace", listSelect.value);
+			});
+
+			forceSyncBtn.textContent = "Force sync";
+			descriptionWrapper.style.display = "flex";
+			descriptionWrapper.style.justifyContent = "space-between";
+			wrapperList.style.display = "flex";
+			wrapperList.style.justifyContent = "space-between";
+			wrapperList.style.alignItems = "center";
 
 			const { user, teams } = this.plugin.settings;
 			// Step 2: Set content and attributes
 			title.textContent = "Click Up sync | Authorized";
+
+			teams.forEach(async (team) => {
+				const spaces = await getSpaces(team.id);
+				spaces.forEach(async (space: any) => {
+					const option = document.createElement("option");
+					option.textContent = space.name;
+					option.id = space.id;
+					listSelect.appendChild(option);
+					const folders = await getAllFolders(space.id);
+					for (const folder of folders) {
+						const lists = await getClickupLists(folder.id);
+						localStorage.setItem("lists", JSON.stringify(lists));
+					}
+				});
+			});
 
 			let textContent = `<div>User: ${user.username}<${user.email}></div>\n`;
 			textContent += `<div>Workspaces: ${teams.map(
@@ -117,7 +173,6 @@ export class MainAppModal extends Modal {
 						.join(",")}]`,
 			)} </div>`;
 
-			textContent += `<div style="display: flex; justify-content: space-between"><span>Last syncronized: 20 Dec 15:17:20</span><button>force sync</button> `;
 			description.innerHTML = textContent;
 
 			function createTable(data: any) {
@@ -173,7 +228,7 @@ export class MainAppModal extends Modal {
 				return table.outerHTML;
 			}
 
-			description.addEventListener("click", async () => {
+			forceSyncBtn.addEventListener("click", async () => {
 				//do send requests
 				//fetch teams, spaces, folders, lists, forderless list from clickapi
 				//fetch team / spaces
@@ -249,8 +304,13 @@ export class MainAppModal extends Modal {
 			});
 
 			// Step 3: Append elements to parent element
+			wrapperList.appendChild(selectThisListContent);
+
+			wrapperList.appendChild(listSelect);
+
 			container.appendChild(title);
-			container.appendChild(description);
+			container.appendChild(wrapperList);
+			container.appendChild(descriptionWrapper);
 			container.appendChild(button);
 
 			contentEl.appendChild(container);

@@ -1,11 +1,16 @@
+import { TAllLists, TCreateTask, TMember } from "api.types";
+
 const CLICK_UP_CLIENT = process.env.CLICK_UP_CLIENT;
 const CLICK_UP_SECRET = process.env.CLICK_UP_SECRET;
 const TOKEN = process.env.TOKEN;
 const PROXY_HOST = process.env.PROXY_HOST;
 
-const fetcher = (url: string, options: any = {}) => {
-	const token = localStorage.getItem("token");
-	options.headers = { Authorization: token };
+const fetcher = (url: string, options: RequestInit = {}) => {
+	const token = localStorage.getItem("token") as any;
+	options.headers = {
+		...options.headers,
+		Authorization: token,
+	};
 	return fetch(`${PROXY_HOST}${url}`, options);
 };
 
@@ -41,7 +46,6 @@ export const getAuthorizedUser = async () => {
 export const getTeams = async () => {
 	const resp = await fetcher(`/api/v2/team`);
 	const data = await resp.json();
-	console.log(data);
 
 	return data.teams;
 };
@@ -74,4 +78,49 @@ export const getTasks = async (list_id: string) => {
 	const response = await fetcher(`/api/v2/list/${list_id}/task`);
 	const data = await response.json();
 	return data.tasks;
+};
+
+export const getClickupLists = async (
+	folderId: string,
+): Promise<TAllLists[]> => {
+	const response = await fetcher(`/api/v2/folder/${folderId}/list`);
+	const data = await response.json();
+	return data.lists;
+};
+
+export const getWorkspaceUser = async (teamId: string, userId: string) => {
+	const response = await fetcher(`/api/v2/team/${teamId}/user/${userId}`);
+	const data = await response.json();
+	return data;
+};
+
+export const getAllFolders = async (space_id: string) => {
+	const response = await fetcher(`/api/v2/space/${space_id}/folder`);
+	const data = await response.json();
+	return data.folders;
+};
+
+export const getListMembers = async (list_id: string): Promise<TMember[]> => {
+	const response = await fetcher(`/api/v2/list/${list_id}/member`);
+	const data = await response.json();
+	return data.members;
+};
+
+export const createTask = async ({
+	listId,
+	data,
+}: {
+	listId: string;
+	data: TCreateTask;
+}) => {
+	const response = await fetcher(`/api/v2/list/${listId}/task`, {
+		method: "POST",
+		body: JSON.stringify(data),
+		headers: {
+			"Content-Type": "application/json",
+		},
+	});
+
+	const responseData = await response.json();
+	return responseData;
 };

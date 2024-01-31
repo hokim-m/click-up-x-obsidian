@@ -19,7 +19,7 @@ export function applyStylesToContainer(
 }
 
 export function createSelectWithOptions(
-	options: { value: string; text: string }[],
+	options: { value: string | number; text: string }[],
 	textContent: string,
 	largeSelect: boolean = false,
 ) {
@@ -68,7 +68,7 @@ export function createInputWithPlaceholder(
 }
 
 export function getElementValue(element: {
-	element: HTMLInputElement | HTMLSelectElement;
+	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 	textContent: string;
 }) {
 	return element.element.value;
