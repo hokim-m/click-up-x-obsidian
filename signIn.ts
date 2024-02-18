@@ -76,6 +76,7 @@ export const createTable = (data: any) => {
 export class MainAppModal extends Modal {
 	result: string;
 	plugin: MyPlugin;
+
 	onSubmit: (result: string) => void;
 
 	constructor(plugin: MyPlugin, onSubmit: (result: string) => void) {
@@ -188,6 +189,102 @@ export class MainAppModal extends Modal {
 		// console.log("Files in the current directory:", files);
 	}
 
+	async addDefaultListSelectionEl(wrapper: any) {
+		const selectedSpace = localStorage.getItem("selectedList");
+		const selectThisListContent = document.createElement("p");
+		const disabledOption = document.createElement("option");
+		const listSelect = document.createElement("select");
+
+		selectThisListContent.textContent = "Select default list";
+
+		disabledOption.textContent = "Loading..";
+		disabledOption.selected = true;
+		disabledOption.disabled = true;
+		listSelect.appendChild(disabledOption);
+
+		setTimeout(async () => {
+			const lists = await this.loadLists();
+			disabledOption.textContent = "Lists";
+			lists.forEach(async (list: any) => {
+				const option = document.createElement("option");
+				option.textContent = list.name;
+				option.id = list.id;
+				listSelect.appendChild(option);
+			});
+			if (selectedSpace) {
+				try {
+					const parsed = JSON.parse(selectedSpace);
+					listSelect.value = parsed.name;
+				} catch (e: any) {
+					localStorage.removeItem("selectedList");
+				}
+			}
+		}, 1);
+
+		listSelect.addEventListener("change", () => {
+			const id = listSelect.options[listSelect.selectedIndex].id;
+			localStorage.setItem(
+				"selectedList",
+				JSON.stringify({ name: listSelect.value, id })
+			);
+		});
+
+		const container = document.createElement("div");
+		container.appendChild(selectThisListContent);
+		container.appendChild(listSelect);
+		container.style.display = "flex";
+		container.style.justifyContent = "space-between";
+		container.style.alignItems = "center";
+		wrapper.appendChild(container);
+	}
+
+	async addSpacesSelectionEl(wrapper: any) {
+		const selectedSpace = localStorage.getItem("selectedSpace");
+		const selectThisListContent = document.createElement("p");
+		const disabledOption = document.createElement("option");
+		const listSelect = document.createElement("select");
+
+		selectThisListContent.textContent = "Select workspace";
+
+		disabledOption.textContent = "Loading...";
+		disabledOption.selected = true;
+		disabledOption.disabled = true;
+		listSelect.appendChild(disabledOption);
+
+		setTimeout(async () => {
+			const spaces = await this.loadSpaces();
+			disabledOption.textContent = "Spaces";
+			spaces.forEach(async (space: any) => {
+				const option = document.createElement("option");
+				option.textContent = space.name;
+				option.id = space.id;
+				listSelect.appendChild(option);
+			});
+			if (selectedSpace) {
+				try {
+					const parsed = JSON.parse(selectedSpace);
+					listSelect.value = parsed.name;
+				} catch (e: any) {
+					localStorage.removeItem("selectedSpace");
+				}
+			}
+		}, 100);
+		listSelect.addEventListener("change", () => {
+			const id = listSelect.options[listSelect.selectedIndex].id;
+			localStorage.setItem(
+				"selectedSpace",
+				JSON.stringify({ name: listSelect.value, id })
+			);
+		});
+		const container = document.createElement("div");
+		container.appendChild(selectThisListContent);
+		container.appendChild(listSelect);
+		container.style.display = "flex";
+		container.style.justifyContent = "space-between";
+		container.style.alignItems = "center";
+		wrapper.appendChild(container);
+	}
+
 	async renderSettings() {
 		const { contentEl } = this;
 		contentEl.empty();
@@ -197,8 +294,6 @@ export class MainAppModal extends Modal {
 			return;
 		}
 
-		const selectedSpace = localStorage.getItem("selectedSpace");
-
 		const container = document.createElement("div");
 		const title = document.createElement("h1");
 		const descriptionWrapper = document.createElement("div");
@@ -206,48 +301,19 @@ export class MainAppModal extends Modal {
 
 		const description = document.createElement("p");
 		const button = document.createElement("button");
-		const listSelect = document.createElement("select");
 		const wrapperList = document.createElement("div");
-		const disabledOption = document.createElement("option");
 
 		descriptionWrapper.appendChild(description);
 		descriptionWrapper.appendChild(forceSyncBtn);
 
-		const selectThisListContent = document.createElement("p");
-		selectThisListContent.textContent =
-			"Please select space before create task!";
-
-		disabledOption.textContent = "Spaces";
-		disabledOption.selected = true;
-
-		disabledOption.disabled = true;
-		listSelect.appendChild(disabledOption);
-		if (selectedSpace) {
-			listSelect.value = selectedSpace;
-		}
-
-		listSelect.addEventListener("change", () => {
-			localStorage.setItem("selectedSpace", listSelect.value);
-		});
-
 		forceSyncBtn.textContent = "Force sync";
 		descriptionWrapper.style.display = "flex";
 		descriptionWrapper.style.justifyContent = "space-between";
-		wrapperList.style.display = "flex";
-		wrapperList.style.justifyContent = "space-between";
-		wrapperList.style.alignItems = "center";
+		wrapperList.style.display = "block";
 
 		const { user, teams } = this.plugin.settings;
 		// Step 2: Set content and attributes
 		title.textContent = "Click Up sync | Authorized";
-
-		const spaces = await this.loadSpaces();
-		spaces.forEach(async (space: any) => {
-			const option = document.createElement("option");
-			option.textContent = space.name;
-			option.id = space.id;
-			listSelect.appendChild(option);
-		});
 
 		let textContent = `<div>User: ${user.username}<${user.email}></div>\n`;
 		textContent += `<div>Workspaces: ${teams.map(
@@ -330,10 +396,9 @@ export class MainAppModal extends Modal {
 			}, 1200);
 		});
 
-		// Step 3: Append elements to parent element
-		wrapperList.appendChild(selectThisListContent);
-
-		wrapperList.appendChild(listSelect);
+		//space selection
+		await this.addSpacesSelectionEl(wrapperList);
+		await this.addDefaultListSelectionEl(wrapperList);
 
 		container.appendChild(title);
 		container.appendChild(wrapperList);

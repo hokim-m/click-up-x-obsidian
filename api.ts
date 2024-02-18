@@ -1,11 +1,7 @@
 import { TAllLists, TCreateTask, TMember } from "api.types";
 
-const CLICK_UP_CLIENT = process.env.CLICK_UP_CLIENT;
-const CLICK_UP_SECRET = process.env.CLICK_UP_SECRET;
-const TOKEN = process.env.TOKEN;
-const PROXY_HOST = process.env.PROXY_HOST;
-
 const fetcher = (url: string, options: RequestInit = {}) => {
+	const PROXY_HOST = process.env.PROXY_HOST;
 	const token = localStorage.getItem("token") as any;
 	options.headers = {
 		...options.headers,
@@ -15,6 +11,8 @@ const fetcher = (url: string, options: RequestInit = {}) => {
 };
 
 export const getToken = async (code: string | undefined) => {
+	const CLICK_UP_CLIENT = process.env.CLICK_UP_CLIENT ?? "";
+	const CLICK_UP_SECRET = process.env.CLICK_UP_SECRET ?? "";
 	const query = new URLSearchParams({
 		client_id: CLICK_UP_CLIENT,
 		client_secret: CLICK_UP_SECRET,
@@ -34,8 +32,6 @@ export const getToken = async (code: string | undefined) => {
 	} catch (error: any) {
 		console.error("Error during getToken()", error);
 	}
-
-	return TOKEN;
 };
 
 export const getAuthorizedUser = async () => {
@@ -81,7 +77,7 @@ export const getTasks = async (list_id: string) => {
 };
 
 export const getClickupLists = async (
-	folderId: string,
+	folderId: string
 ): Promise<TAllLists[]> => {
 	const response = await fetcher(`/api/v2/folder/${folderId}/list`);
 	const data = await response.json();
