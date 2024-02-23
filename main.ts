@@ -1,14 +1,5 @@
 import { CreateTaskModal } from "./components/CreateTaskModal";
-import {
-	App,
-	Editor,
-	MarkdownView,
-	Modal,
-	Notice,
-	Plugin,
-	PluginSettingTab,
-	Setting,
-} from "obsidian";
+import { Editor, MarkdownView, Notice, Plugin } from "obsidian";
 import { MainAppModal, createTable } from "./signIn";
 import "./main.css";
 import { createTask, getAuthorizedUser, getTasks, getTeams } from "./api";
@@ -68,7 +59,7 @@ export default class MyPlugin extends Plugin {
 				}).open();
 			}
 		);
-	
+
 		this.addCommand({
 			id: "manual-create-task",
 			name: "Create ClickUp task",
