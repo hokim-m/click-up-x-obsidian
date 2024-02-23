@@ -106,6 +106,7 @@ export default class MyPlugin extends Plugin {
 							` [task](${task.url})`,
 							editor.getCursor()
 						);
+						new Notice("Created new task!", 3000);
 						this.syncronizeListNote(list.id);
 					}, 100);
 				} catch (e) {

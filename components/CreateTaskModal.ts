@@ -1,4 +1,4 @@
-import { Modal } from "obsidian";
+import { Modal, Notice } from "obsidian";
 import "../main.css";
 import {
 	applyStylesToContainer,
@@ -188,6 +188,8 @@ export class CreateTaskModal extends Modal {
 			});
 			btn.textContent = "Success";
 			btn.style.backgroundColor = "green";
+			
+			new Notice("Created new task!", 3000);
 
 			this.close();
 
