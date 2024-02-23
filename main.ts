@@ -9,9 +9,9 @@ import {
 	PluginSettingTab,
 	Setting,
 } from "obsidian";
-import { MainAppModal } from "./signIn";
+import { MainAppModal, createTable } from "./signIn";
 import "./main.css";
-import { createTask, getAuthorizedUser, getTeams } from "./api";
+import { createTask, getAuthorizedUser, getTasks, getTeams } from "./api";
 
 import * as dotenv from "dotenv";
 import { SigninRequiredModal } from "components/SigninRequired";
@@ -42,22 +42,6 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 	teams: [],
 	token: "",
 };
-
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.setText("Woah!");
-	}
-
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
-	}
-}
 
 export default class MyPlugin extends Plugin {
 	settings: MyPluginSettings;
@@ -151,6 +135,7 @@ export default class MyPlugin extends Plugin {
 							` [task](${task.url})`,
 							editor.getCursor()
 						);
+						this.syncronizeListNote(list.id);
 					}, 100);
 				} catch (e) {
 					//alert on error
@@ -186,32 +171,39 @@ export default class MyPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
-}
 
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+	async syncronizeListNote(id: string) {
+		// console.log(app.vault)
+		const note = app.vault
+			.getFiles()
+			.filter((f) => f.path.startsWith("ClickUp"))
+			.find((f) => f.path.includes(`[${id}]`));
 
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
+		if (!note) {
+			console.log("could not find note to sync");
+			return;
+		}
 
-	display(): void {
-		const { containerEl } = this;
+		const vault = this.app.vault;
+		const tasks = await getTasks(id);
+		const rows = tasks.map((task: any, index: any) => {
+			return {
+				id: task.id,
+				order: index + 1,
+				name: task.name,
+				status: task.status.status,
+				date_created: new Date(
+					Number(task.date_created)
+				).toLocaleString("en-US"),
+				creator: task.creator.username,
+				assignees: task.assignees.map((u: any) => u.username),
+				priority: ["Low", "Medium", "High", "Critical"],
+			};
+		});
+		const tableHTML = createTable(rows);
+		const filePath = note!.path.toString();
 
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName("Setting #1")
-			.setDesc("It's a secret")
-			.addText((text) =>
-				text
-					.setPlaceholder("Enter your secret")
-					.setValue(this.plugin.settings.mySetting)
-					.onChange(async (value) => {
-						this.plugin.settings.mySetting = value;
-						await this.plugin.saveSettings();
-					})
-			);
+		vault.delete(note!);
+		vault.create(filePath, tableHTML);
 	}
 }
