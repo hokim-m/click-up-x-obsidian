@@ -1,10 +1,10 @@
 {
 	"id": "click-up-x-obsidian",
 	"name": "ClickUp x Obsidian",
-	"version": "1.0.0",
+	"version": "0.1.0",
 	"minAppVersion": "0.15.0",
 	"description": "Manage ClickUp space from Obsidian notes",
-	"author": "hokim-m",
+	"author": "Khokim Mamarasulov <hokim-m>",
 	"authorUrl": "https://github.com/hokim-m/",
 	"isDesktopOnly": false
 }
