@@ -55,26 +55,12 @@ export default class MyPlugin extends Plugin {
 			localStorage.setItem("CLICK_UP_CODE", parameters.code);
 		});
 
-		function getVaultPath() {
-			const vaultAdapter = app.vault.adapter;
-			if (vaultAdapter) {
-				return vaultAdapter.getBasePath();
-			} else {
-				return null;
-			}
-		}
-
-		// Example usage
-		const vaultPath = getVaultPath();
-		console.log(`Vault Path: ${vaultPath}`);
-		localStorage.setItem("path", vaultPath);
-
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon(
-			"dice",
-			"Sample Plugin",
+		this.addRibbonIcon(
+			"refresh-ccw-dot",
+			"x ClickUp",
 			(evt: MouseEvent) => {
 				// Called when the user clicks the icon.
 				new MainAppModal(this, (result) => {
@@ -82,13 +68,7 @@ export default class MyPlugin extends Plugin {
 				}).open();
 			}
 		);
-		// Perform additional things with the ribbon
-		ribbonIconEl.addClass("my-plugin-ribbon-class");
-
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText("Status Bar Text");
-
+	
 		this.addCommand({
 			id: "manual-create-task",
 			name: "Create ClickUp task",

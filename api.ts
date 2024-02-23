@@ -10,7 +10,8 @@ const fetcher = (url: string, options: RequestInit = {}) => {
 	return fetch(`${PROXY_HOST}${url}`, options);
 };
 
-export const getToken = async (code: string | undefined) => {
+export const getToken = async (code: string) => {
+	if (!code) return "MISSING_CODE"
 	const CLICK_UP_CLIENT = process.env.CLICK_UP_CLIENT ?? "";
 	const CLICK_UP_SECRET = process.env.CLICK_UP_SECRET ?? "";
 	const query = new URLSearchParams({

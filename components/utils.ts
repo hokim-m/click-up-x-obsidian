@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-inferrable-types */
 export function applyStylesToContainer(
 	container: HTMLDivElement,
 	child: {
 		element: HTMLSelectElement | HTMLInputElement;
 		textContent: string;
-	},
+	}
 ) {
 	container.style.display = "flex";
 	container.style.justifyContent = "space-between";
@@ -21,7 +22,7 @@ export function applyStylesToContainer(
 export function createSelectWithOptions(
 	options: { value: string | number; text: string }[],
 	textContent: string,
-	largeSelect: boolean = false,
+	largeSelect: boolean = false
 ) {
 	const select = document.createElement("select");
 	select.required = true;
@@ -34,7 +35,7 @@ export function createSelectWithOptions(
 
 	options.forEach((optionData, index) => {
 		const option = document.createElement("option");
-		option.value = optionData.value;
+		option.value = String(optionData.value);
 		option.text = optionData.text;
 
 		if (index === 0) {
@@ -51,7 +52,7 @@ export function createInputWithPlaceholder(
 	placeholderText: string,
 	textContent: string,
 	largeInput: boolean = false,
-	inputType: "input" | "textarea" = "input",
+	inputType: "input" | "textarea" = "input"
 ) {
 	const input = document.createElement(inputType);
 	input.required = true;
@@ -77,7 +78,7 @@ export function getElementValue(element: {
 export function validateForm(container: HTMLDivElement): boolean {
 	const requiredFields = container.querySelectorAll("[required]");
 
-	for (const field of requiredFields) {
+	for (const field of Array.from(requiredFields)) {
 		if (
 			!(field instanceof HTMLInputElement) &&
 			!(field instanceof HTMLSelectElement)

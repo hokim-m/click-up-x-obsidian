@@ -24,9 +24,8 @@ export class CreateTaskModal extends Modal {
 	}
 
 	onOpen() {
-		const lists: { id: string; name: string }[] = JSON.parse(
-			localStorage.getItem("lists")
-		);
+		const listsJson = localStorage.getItem("lists") ?? "";
+		const lists: { id: string; name: string }[] = JSON.parse(listsJson);
 		const listSelects = lists.map((item) => ({
 			text: item.name,
 			value: item.id,
@@ -108,7 +107,7 @@ export class CreateTaskModal extends Modal {
 			prioritySelect,
 		];
 
-		containerChilds.forEach((child) => {
+		containerChilds.forEach((child: any) => {
 			const wrapperDiv = document.createElement("div");
 
 			applyStylesToContainer(wrapperDiv, child);
@@ -183,7 +182,7 @@ export class CreateTaskModal extends Modal {
 			priority: Number(priority),
 		};
 		try {
-			const createdTask = await createTask({
+			await createTask({
 				data: requestData,
 				listId: list,
 			});
