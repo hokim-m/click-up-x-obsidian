@@ -155,7 +155,7 @@ export class MainAppModal extends Modal {
 
 			if (!inputValue) {
 				window.open(
-					"https://app.clickup.com/api?client_id=TGKZSPVNT4Z5VWFN4PG5YC8WK9BCJ5YX&redirect_uri=https://clickup.dedicated.agency/obsidian",
+					"https://app.clickup.com/api?client_id=TGKZSPVNT4Z5VWFN4PG5YC8WK9BCJ5YX&redirect_uri=https://apps.oceanbatt.cloud/obsidian",
 					"_blank"
 				);
 			}
