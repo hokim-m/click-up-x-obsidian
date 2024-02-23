@@ -1,6 +1,6 @@
-# Obsidian x ClickUp Plugin
+# Sync ClickUp Plugin
 
-Plugin to connect your ClickUp workspace with Obsidian
+Plugin to connect your ClickUp workspace notes
 
 
 **Note:** Plugin in beta stage, and being updated regularly!
@@ -8,7 +8,7 @@ Plugin to connect your ClickUp workspace with Obsidian
 Features
 - Syncronize workspace lists & tasks as notes.
 - View tasks in notes.
-- Create task from Obsidian
+- Create task from notes
 
 ## How to use
 

@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-clickup-plugin",
+	"name": "click-up-sync",
 	"version": "1.0.0",
-	"description": "Obsidian x ClickUp plugin. Can update ClickUp tasks from Obsidian notes; Forked from: sample plugin for Obsidian (https://obsidian.md)",
+	"description": "Sync ClickUp workspace & tasks",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
