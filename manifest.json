@@ -5,7 +5,6 @@
 	"minAppVersion": "0.15.0",
 	"description": "Manage ClickUp space from Obsidian notes",
 	"author": "hokim-m",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"authorUrl": "https://github.com/hokim-m/",
 	"isDesktopOnly": false
 }
