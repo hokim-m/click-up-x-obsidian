@@ -6,11 +6,12 @@ export function applyStylesToContainer(
 		textContent: string;
 	}
 ) {
-	container.style.display = "flex";
-	container.style.justifyContent = "space-between";
-	container.style.alignItems = "center";
-	container.style.height = "30px";
-	container.style.width = "500px";
+	container.classList.add("applyStylesToContainer");
+	// container.style.display = "flex";
+	// container.style.justifyContent = "space-between";
+	// container.style.alignItems = "center";
+	// container.style.height = "30px";
+	// container.style.width = "500px";
 
 	const textContent = document.createElement("span");
 	textContent.textContent = child.textContent;
@@ -26,12 +27,13 @@ export function createSelectWithOptions(
 ) {
 	const select = document.createElement("select");
 	select.required = true;
-
-	select.style.width = largeSelect ? "300px" : "200px";
-	// select.style.padding = "8px";
-	select.style.marginBottom = "10px";
-	select.style.border = "1px solid #ccc";
-	select.style.borderRadius = "5px";
+	select.classList.add("createSelectWithOptions");
+	select.toggleClass("largeSelect", largeSelect);
+	// select.style.width = largeSelect ? "300px" : "200px";
+	// // select.style.padding = "8px";
+	// select.style.marginBottom = "10px";
+	// select.style.border = "1px solid #ccc";
+	// select.style.borderRadius = "5px";
 
 	options.forEach((optionData, index) => {
 		const option = document.createElement("option");
@@ -56,12 +58,13 @@ export function createInputWithPlaceholder(
 ) {
 	const input = document.createElement(inputType);
 	input.required = true;
-
-	input.style.width = largeInput ? "300px" : "200px";
-	input.style.padding = "8px";
-	input.style.marginBottom = "10px";
-	input.style.border = "1px solid #ccc";
-	input.style.borderRadius = "5px";
+	input.classList.add("createInputWithPlaceholder");
+	// input.style.width = largeInput ? "300px" : "200px";
+	// input.style.padding = "8px";
+	// input.style.marginBottom = "10px";
+	// input.style.border = "1px solid #ccc";
+	// input.style.borderRadius = "5px";
+	input.toggleClass("largeInput", largeInput);
 
 	input.placeholder = placeholderText;
 
@@ -92,4 +95,36 @@ export function validateForm(container: HTMLDivElement): boolean {
 	}
 
 	return true;
+}
+export function getElementHTML(element: any) {
+	var tagName = element.tagName.toLowerCase();
+	var html = "<" + tagName;
+
+	// Attributes
+	for (var i = 0; i < element.attributes.length; i++) {
+		var attr = element.attributes[i];
+		html += " " + attr.name + '="' + attr.value + '"';
+	}
+
+	// Close opening tag
+	html += ">";
+
+	// Children
+	if (element.childNodes.length > 0) {
+		for (var i = 0; i < element.childNodes.length; i++) {
+			var child = element.childNodes[i];
+			if (child.nodeType === Node.TEXT_NODE) {
+				// Text node
+				html += child.textContent;
+			} else if (child.nodeType === Node.ELEMENT_NODE) {
+				// Element node
+				html += getElementHTML(child);
+			}
+		}
+	}
+
+	// Closing tag
+	html += "</" + tagName + ">";
+
+	return html;
 }
