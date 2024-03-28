@@ -2,6 +2,7 @@ import { CreateTaskModal } from "./components/CreateTaskModal";
 import { Editor, MarkdownView, Notice, Plugin } from "obsidian";
 import { MainAppModal, createTable } from "./signIn";
 import "./main.css";
+// import "./styles.css"
 import { createTask, getAuthorizedUser, getTasks, getTeams } from "./api";
 
 import * as dotenv from "dotenv";
@@ -12,7 +13,12 @@ dotenv.config({
 	path: `${basePath}/.obsidian/plugins/click-up-x-obsidian/.env`,
 	debug: false,
 });
+// const configDir = app.vault.configDir;
 
+// dotenv.config({
+// 	path: `${configDir}/plugins/click-up-x-obsidian/.env`,
+// 	debug: false,
+// });
 // Remember to rename these classes and interfaces!
 
 type TClickUpRedirectParams = {

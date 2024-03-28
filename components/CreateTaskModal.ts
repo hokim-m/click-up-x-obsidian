@@ -64,12 +64,18 @@ export class CreateTaskModal extends Modal {
 			assigneeSelectOptions.push(...[firstAssigneeOption, ...listMember]);
 
 			// Refresh the assigneeSelect with updated options
-			assigneeSelect.element.innerHTML = assigneeSelectOptions
-				.map(
-					(option) =>
-						`<option value="${option.value}">${option.text}</option>`
-				)
-				.join("");
+			assigneeSelectOptions.map((option) =>
+				assigneeSelect.element.createEl("option", {
+					value: String(option.value),
+					text: option.text,
+				})
+			);
+			// assigneeSelect.element.innerHTML = assigneeSelectOptions
+			// 	.map(
+			// 		(option) =>
+			// 			`<option value="${option.value}">${option.text}</option>`
+			// 	)
+			// 	.join("");
 
 			console.log("listMember", listMember);
 		});
@@ -120,13 +126,17 @@ export class CreateTaskModal extends Modal {
 		submitButton.textContent = "Add";
 		submitButton.classList.add("submit-btn");
 
-		const errorMessage = document.createElement("p");
-		container.appendChild(errorMessage);
+		const errorMessage = container.createEl("p", {
+			cls: "errorMessage",
+			text: "Please fill in all required fields!",
+		});
+		// container.appendChild(errorMessage);
 
 		submitButton.addEventListener("click", () => {
 			console.clear();
 			if (validateForm(container)) {
-				errorMessage.style.visibility = "hidden";
+				errorMessage.toggleClass("errormessagehide", true);
+				// errorMessage.style.visibility = "hidden";
 				this.handleFormSubmit(
 					{
 						title: getElementValue(titleInput),
@@ -138,18 +148,22 @@ export class CreateTaskModal extends Modal {
 					submitButton
 				);
 			} else {
-				errorMessage.style.color = "red";
-				errorMessage.style.fontSize = "14px";
-				errorMessage.textContent =
-					"Please fill in all required fields!";
+				errorMessage.toggleClass("errormessagehide", false);
+
+				// errorMessage.style.color = "red";
+				// errorMessage.style.fontSize = "14px";
+				// errorMessage.textContent =
+				// 	"Please fill in all required fields!";
 			}
 		});
-
-		const submitContainer = document.createElement("div");
+		const submitContainer = container.createEl("div", {
+			cls: "submitContainer",
+		});
+		// const submitContainer = document.createElement("div");
 		submitContainer.appendChild(submitButton);
 
-		submitContainer.style.textAlign = "right";
-		submitContainer.style.paddingRight = "25px";
+		// submitContainer.style.textAlign = "right";
+		// submitContainer.style.paddingRight = "25px";
 
 		container.appendChild(submitContainer);
 
@@ -187,8 +201,9 @@ export class CreateTaskModal extends Modal {
 				listId: list,
 			});
 			btn.textContent = "Success";
-			btn.style.backgroundColor = "green";
-			
+			btn.toggleClass("createTaskSucces", true);
+			// btn.style.backgroundColor = "green";
+
 			new Notice("Created new task!", 3000);
 
 			this.close();
@@ -197,7 +212,8 @@ export class CreateTaskModal extends Modal {
 		} catch (error) {
 			console.log(error);
 			btn.textContent = "Error";
-			btn.style.backgroundColor = "red";
+			// btn.style.backgroundColor = "red";
+			btn.toggleClass("createTaskError", true);
 		} finally {
 			btn.disabled = false;
 		}

@@ -2,7 +2,7 @@ import { TAllLists, TCreateTask, TMember } from "api.types";
 
 const fetcher = (url: string, options: RequestInit = {}) => {
 	const PROXY_HOST = process.env.PROXY_HOST;
-	const token = localStorage.getItem("token") as any;
+	const token = localStorage.getItem("token") as string;
 	options.headers = {
 		...options.headers,
 		Authorization: token,
@@ -11,7 +11,7 @@ const fetcher = (url: string, options: RequestInit = {}) => {
 };
 
 export const getToken = async (code: string) => {
-	if (!code) return "MISSING_CODE"
+	if (!code) return "MISSING_CODE";
 	const CLICK_UP_CLIENT = process.env.CLICK_UP_CLIENT ?? "";
 	const CLICK_UP_SECRET = process.env.CLICK_UP_SECRET ?? "";
 	const query = new URLSearchParams({

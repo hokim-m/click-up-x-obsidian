@@ -11,7 +11,7 @@ import {
 } from "./api";
 import { createFolder } from "./app";
 import { SIGNIN_STEPS } from "components/constants";
-import { createInputWithPlaceholder } from "components/utils";
+import { createInputWithPlaceholder, getElementHTML } from "components/utils";
 
 interface ISpace {
 	name: string;
@@ -70,7 +70,7 @@ export const createTable = (data: any) => {
 	table.appendChild(tbody);
 
 	// Return the table as a string
-	return table.outerHTML;
+	return getElementHTML(table);
 };
 
 export class MainAppModal extends Modal {
@@ -109,13 +109,13 @@ export class MainAppModal extends Modal {
 			for (const space of spaces) {
 				const folders = await getAllFolders(space.id);
 
-				for (const folder of folders) {
-					const fList = await getList(folder.id);
+				for (const folder of folders || []) {
+					const fList = (await getList(folder.id)) || [];
 					fList.forEach((l: any) =>
 						lists.push({ name: l.name, id: l.id })
 					);
 				}
-				const folderless = await getFolderlessList(space.id);
+				const folderless = (await getFolderlessList(space.id)) || [];
 				folderless.forEach((l: any) =>
 					lists.push({ name: l.name, id: l.id })
 				);
@@ -165,14 +165,15 @@ export class MainAppModal extends Modal {
 			if (inputValue) {
 				button.disabled = true;
 				button.textContent = "Loading...";
-				button.style.backgroundColor = "gray";
+				// button.style.backgroundColor = "gray";
+				button.classList.add("renderAuthrizationBtn");
 
 				token = await getToken(inputValue);
 				if (token) {
 					await plugin.fetchUser(token);
-
+					button.toggleClass("renderAuthrizationBtnSucces", true);
 					button.textContent = "Success";
-					button.style.backgroundColor = "green";
+					// button.style.backgroundColor = "green";
 					this.renderSettings();
 				}
 			}
@@ -203,7 +204,7 @@ export class MainAppModal extends Modal {
 		listSelect.appendChild(disabledOption);
 
 		setTimeout(async () => {
-			const lists = await this.loadLists();
+			const lists = (await this.loadLists()) || [];
 			disabledOption.textContent = "Lists";
 			lists.forEach(async (list: any) => {
 				const option = document.createElement("option");
@@ -232,9 +233,10 @@ export class MainAppModal extends Modal {
 		const container = document.createElement("div");
 		container.appendChild(selectThisListContent);
 		container.appendChild(listSelect);
-		container.style.display = "flex";
-		container.style.justifyContent = "space-between";
-		container.style.alignItems = "center";
+		container.classList.add("addDefaultListSelectionEl-container");
+		// container.style.display = "flex";
+		// container.style.justifyContent = "space-between";
+		// container.style.alignItems = "center";
 		wrapper.appendChild(container);
 	}
 
@@ -279,9 +281,10 @@ export class MainAppModal extends Modal {
 		const container = document.createElement("div");
 		container.appendChild(selectThisListContent);
 		container.appendChild(listSelect);
-		container.style.display = "flex";
-		container.style.justifyContent = "space-between";
-		container.style.alignItems = "center";
+		container.classList.add("addDefaultListSelectionEl-container");
+		// container.style.display = "flex";
+		// container.style.justifyContent = "space-between";
+		// container.style.alignItems = "center";
 		wrapper.appendChild(container);
 	}
 
@@ -307,27 +310,55 @@ export class MainAppModal extends Modal {
 		descriptionWrapper.appendChild(forceSyncBtn);
 
 		forceSyncBtn.textContent = "Force sync";
-		descriptionWrapper.style.display = "flex";
-		descriptionWrapper.style.justifyContent = "space-between";
-		wrapperList.style.display = "block";
+		descriptionWrapper.classList.add("descriptionWrapper");
+		// descriptionWrapper.style.display = "flex";
+		// descriptionWrapper.style.justifyContent = "space-between";
+		wrapperList.classList.add("wrapperList");
 
 		const { user, teams } = this.plugin.settings;
 		// Step 2: Set content and attributes
 		title.textContent = "Click Up sync | Authorized";
 
-		let textContent = `<div>User: ${user.username}<${user.email}></div>\n`;
-		textContent += `<div>Workspaces: ${teams.map(
-			(team) =>
-				`${team.name}[Members: ${team.members
-					.map(
-						(u: any) =>
-							`<div style="margin-top:10px">${u.user.username}</div>`
-					)
-					.join(",")}]`
-		)} </div>`;
+		// let textContent = `<div>User: ${user.username}<${user.email}></div>\n`;
+		// textContent += `<div>Workspaces: ${teams.map(
+		// 	(team) =>
+		// 		`${team.name}[Members: ${team.members
+		// 			.map(
+		// 				(u: any) =>
+		// 					`<div style="margin-top:10px">${u.user.username}</div>`
+		// 			)
+		// 			.join(",")}]`
+		// )} </div>`;
 
-		description.innerHTML = textContent;
+		// description.innerHTML = textContent;
+		var div2 = document.createElement("div");
+		div2.textContent = `Workspaces:`;
+		description.appendChild(div2);
 
+		// Iterate through teams
+		teams.forEach(function (team) {
+			// Create a div element for each team
+			var teamDiv = document.createElement("div");
+			teamDiv.textContent = `${team.name}[Members:`;
+
+			// Iterate through members of the team
+			var membersDiv = document.createElement("div");
+			team.members.forEach(function (u: any) {
+				var memberDiv = document.createElement("div");
+				memberDiv.textContent = u.user.username;
+				memberDiv.style.marginTop = "10px";
+				membersDiv.appendChild(memberDiv);
+			});
+
+			// Append members div to team div
+			teamDiv.appendChild(membersDiv);
+
+			// Close the bracket for Members
+			teamDiv.textContent += "]";
+
+			// Append team div to the second part of the content
+			div2.appendChild(teamDiv);
+		});
 		forceSyncBtn.addEventListener("click", async () => {
 			await this.configureListsLocally();
 
