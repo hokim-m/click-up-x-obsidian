@@ -10,7 +10,7 @@ import { SigninRequiredModal } from "components/SigninRequired";
 const configDir = app.vault.configDir;
 
 dotenv.config({
-	path: `${configDir}/plugins/click-up-x-obsidian-zafar-/.env`,
+	path: `${configDir}/plugins/click-up-x-obsidian/.env`,
 	debug: false,
 });
 // Remember to rename these classes and interfaces!
