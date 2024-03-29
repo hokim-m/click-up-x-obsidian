@@ -74,7 +74,7 @@ export default class ClickUpPlugin extends Plugin {
 		this.addCommand({
 			id: "create-task",
 			name: "Create ClickUp task from selection",
-			hotkeys: [{ modifiers: ["Ctrl" || "Mod", "Shift"], key: "c" }],
+			hotkeys: [{ modifiers: ["Mod" || "Ctrl", "Shift"], key: "c" }],
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
 				const sel = editor.getSelection();
 				const defaultList = localStorage.getItem("selectedList");
@@ -102,7 +102,7 @@ export default class ClickUpPlugin extends Plugin {
 					setTimeout(() => {
 						editor.replaceRange(
 							` [task](${task.url})`,
-							editor.getCursor()
+							editor.getCursor("to")
 						);
 						new Notice("Created new task!", 3000);
 						this.syncronizeListNote(list.id);

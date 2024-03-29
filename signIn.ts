@@ -337,21 +337,21 @@ export class MainAppModal extends Modal {
 		forceSyncBtn.addEventListener("click", async () => {
 			await this.configureListsLocally();
 
-			const vaultPath = localStorage.getItem("path");
-			createFolder(`${vaultPath}/ClickUp`);
+			const vaultPath = this.plugin.app.vault.getName();
+			createFolder(`ClickUp`);
 			for (const team of teams) {
-				createFolder(`${vaultPath}/ClickUp/${team.name}`);
+				createFolder(`ClickUp/${team.name}`);
 				const spaces = await getSpaces(team.id);
 				for (const space of spaces) {
 					createFolder(
-						`${vaultPath}/ClickUp/${team.name}/${space.name} - [${space.id}]`
+						`ClickUp/${team.name}/${space.name} - [${space.id}]`
 					);
 					const folders = await getFolders(space.id);
 
 					for (const folder of folders || []) {
 						// const list = await getList(folder.id)
 						createFolder(
-							`${vaultPath}/ClickUp/${team.name}/${space.name} - [${space.id}]/${folder.name}`
+							`ClickUp/${team.name}/${space.name} - [${space.id}]/${folder.name}`
 						);
 					}
 
