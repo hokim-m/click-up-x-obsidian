@@ -7,12 +7,6 @@ export function applyStylesToContainer(
 	}
 ) {
 	container.classList.add("applyStylesToContainer");
-	// container.style.display = "flex";
-	// container.style.justifyContent = "space-between";
-	// container.style.alignItems = "center";
-	// container.style.height = "30px";
-	// container.style.width = "500px";
-
 	const textContent = document.createElement("span");
 	textContent.textContent = child.textContent;
 
@@ -29,12 +23,6 @@ export function createSelectWithOptions(
 	select.required = true;
 	select.classList.add("createSelectWithOptions");
 	select.toggleClass("largeSelect", largeSelect);
-	// select.style.width = largeSelect ? "300px" : "200px";
-	// // select.style.padding = "8px";
-	// select.style.marginBottom = "10px";
-	// select.style.border = "1px solid #ccc";
-	// select.style.borderRadius = "5px";
-
 	options.forEach((optionData, index) => {
 		const option = document.createElement("option");
 		option.value = String(optionData.value);
@@ -59,11 +47,6 @@ export function createInputWithPlaceholder(
 	const input = document.createElement(inputType);
 	input.required = true;
 	input.classList.add("createInputWithPlaceholder");
-	// input.style.width = largeInput ? "300px" : "200px";
-	// input.style.padding = "8px";
-	// input.style.marginBottom = "10px";
-	// input.style.border = "1px solid #ccc";
-	// input.style.borderRadius = "5px";
 	input.toggleClass("largeInput", largeInput);
 
 	input.placeholder = placeholderText;

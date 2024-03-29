@@ -1,24 +1,18 @@
 import { CreateTaskModal } from "./components/CreateTaskModal";
 import { Editor, MarkdownView, Notice, Plugin } from "obsidian";
 import { MainAppModal, createTable } from "./signIn";
-import "./main.css";
-// import "./styles.css"
+import "./styles.css";
 import { createTask, getAuthorizedUser, getTasks, getTeams } from "./api";
 
 import * as dotenv from "dotenv";
 import { SigninRequiredModal } from "components/SigninRequired";
 
-const basePath = (app.vault.adapter as any).basePath;
+const configDir = app.vault.configDir;
+
 dotenv.config({
-	path: `${basePath}/.obsidian/plugins/click-up-x-obsidian/.env`,
+	path: `${configDir}/plugins/click-up-x-obsidian-zafar-/.env`,
 	debug: false,
 });
-// const configDir = app.vault.configDir;
-
-// dotenv.config({
-// 	path: `${configDir}/plugins/click-up-x-obsidian/.env`,
-// 	debug: false,
-// });
 // Remember to rename these classes and interfaces!
 
 type TClickUpRedirectParams = {
@@ -26,26 +20,25 @@ type TClickUpRedirectParams = {
 	code: string;
 };
 
-interface MyPluginSettings {
+interface ClickUpPluginSettings {
 	user: any;
 	teams: any[];
 	token: string;
 	teamId: string;
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
+const DEFAULT_SETTINGS: ClickUpPluginSettings = {
 	user: null,
 	teamId: "",
 	teams: [],
 	token: "",
 };
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class ClickUpPlugin extends Plugin {
+	settings: ClickUpPluginSettings;
 
 	async onload() {
 		console.log("loaded?");
-
 		// Returns ClickUp code
 		this.registerObsidianProtocolHandler("plugin", async (e) => {
 			const parameters = e as TClickUpRedirectParams;
@@ -81,13 +74,12 @@ export default class MyPlugin extends Plugin {
 		this.addCommand({
 			id: "create-task",
 			name: "Create ClickUp task from selection",
-			hotkeys: [{ modifiers: ["Mod", "Shift"], key: "c" }],
+			hotkeys: [{ modifiers: ["Ctrl" || "Mod", "Shift"], key: "c" }],
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
 				const sel = editor.getSelection();
 				const defaultList = localStorage.getItem("selectedList");
 
 				if (!sel) {
-					//alert
 					return;
 				}
 				if (!defaultList) {

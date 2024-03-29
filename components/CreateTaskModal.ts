@@ -1,5 +1,5 @@
 import { Modal, Notice } from "obsidian";
-import "../main.css";
+import "../styles.css";
 import {
 	applyStylesToContainer,
 	createInputWithPlaceholder,
@@ -13,12 +13,12 @@ import {
 	prioritySelectOptions,
 } from "./constants";
 import { createTask, getListMembers } from "api";
-import MyPlugin from "main";
+import ClickUpPlugin from "main";
 import { TCreateTask, TMember } from "api.types";
 
 export class CreateTaskModal extends Modal {
-	plugin: MyPlugin;
-	constructor(plugin: MyPlugin) {
+	plugin: ClickUpPlugin;
+	constructor(plugin: ClickUpPlugin) {
 		super(plugin.app);
 		this.plugin = plugin;
 	}
@@ -70,12 +70,6 @@ export class CreateTaskModal extends Modal {
 					text: option.text,
 				})
 			);
-			// assigneeSelect.element.innerHTML = assigneeSelectOptions
-			// 	.map(
-			// 		(option) =>
-			// 			`<option value="${option.value}">${option.text}</option>`
-			// 	)
-			// 	.join("");
 
 			console.log("listMember", listMember);
 		});
@@ -127,7 +121,7 @@ export class CreateTaskModal extends Modal {
 		submitButton.classList.add("submit-btn");
 
 		const errorMessage = container.createEl("p", {
-			cls: "errorMessage",
+			cls: "error-message",
 			text: "Please fill in all required fields!",
 		});
 		// container.appendChild(errorMessage);
@@ -135,8 +129,7 @@ export class CreateTaskModal extends Modal {
 		submitButton.addEventListener("click", () => {
 			console.clear();
 			if (validateForm(container)) {
-				errorMessage.toggleClass("errormessagehide", true);
-				// errorMessage.style.visibility = "hidden";
+				errorMessage.toggleClass("errorMessageHide", true);
 				this.handleFormSubmit(
 					{
 						title: getElementValue(titleInput),
@@ -148,25 +141,14 @@ export class CreateTaskModal extends Modal {
 					submitButton
 				);
 			} else {
-				errorMessage.toggleClass("errormessagehide", false);
-
-				// errorMessage.style.color = "red";
-				// errorMessage.style.fontSize = "14px";
-				// errorMessage.textContent =
-				// 	"Please fill in all required fields!";
+				errorMessage.toggleClass("errorMessageHide", false);
 			}
 		});
 		const submitContainer = container.createEl("div", {
-			cls: "submitContainer",
+			cls: "submit-container",
 		});
-		// const submitContainer = document.createElement("div");
 		submitContainer.appendChild(submitButton);
-
-		// submitContainer.style.textAlign = "right";
-		// submitContainer.style.paddingRight = "25px";
-
 		container.appendChild(submitContainer);
-
 		contentEl.appendChild(container);
 	}
 
@@ -202,7 +184,6 @@ export class CreateTaskModal extends Modal {
 			});
 			btn.textContent = "Success";
 			btn.toggleClass("createTaskSucces", true);
-			// btn.style.backgroundColor = "green";
 
 			new Notice("Created new task!", 3000);
 
@@ -212,7 +193,6 @@ export class CreateTaskModal extends Modal {
 		} catch (error) {
 			console.log(error);
 			btn.textContent = "Error";
-			// btn.style.backgroundColor = "red";
 			btn.toggleClass("createTaskError", true);
 		} finally {
 			btn.disabled = false;

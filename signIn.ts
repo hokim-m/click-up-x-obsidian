@@ -69,7 +69,6 @@ export const createTable = (data: any) => {
 	});
 	table.appendChild(tbody);
 
-	// Return the table as a string
 	return getElementHTML(table);
 };
 
@@ -149,7 +148,7 @@ export class MainAppModal extends Modal {
 		description.textContent =
 			"We need to retreive authroized token from ClickUp to start syncronizing your tasks from Obsidian notes";
 		button.textContent = "Sign In";
-
+		button.classList.add("signBtn");
 		button.addEventListener("click", async () => {
 			const inputValue = input.element.value;
 
@@ -165,7 +164,6 @@ export class MainAppModal extends Modal {
 			if (inputValue) {
 				button.disabled = true;
 				button.textContent = "Loading...";
-				// button.style.backgroundColor = "gray";
 				button.classList.add("renderAuthrizationBtn");
 
 				token = await getToken(inputValue);
@@ -173,7 +171,6 @@ export class MainAppModal extends Modal {
 					await plugin.fetchUser(token);
 					button.toggleClass("renderAuthrizationBtnSucces", true);
 					button.textContent = "Success";
-					// button.style.backgroundColor = "green";
 					this.renderSettings();
 				}
 			}
@@ -234,9 +231,6 @@ export class MainAppModal extends Modal {
 		container.appendChild(selectThisListContent);
 		container.appendChild(listSelect);
 		container.classList.add("addDefaultListSelectionEl-container");
-		// container.style.display = "flex";
-		// container.style.justifyContent = "space-between";
-		// container.style.alignItems = "center";
 		wrapper.appendChild(container);
 	}
 
@@ -282,9 +276,6 @@ export class MainAppModal extends Modal {
 		container.appendChild(selectThisListContent);
 		container.appendChild(listSelect);
 		container.classList.add("addDefaultListSelectionEl-container");
-		// container.style.display = "flex";
-		// container.style.justifyContent = "space-between";
-		// container.style.alignItems = "center";
 		wrapper.appendChild(container);
 	}
 
@@ -305,32 +296,16 @@ export class MainAppModal extends Modal {
 		const description = document.createElement("p");
 		const button = document.createElement("button");
 		const wrapperList = document.createElement("div");
-
 		descriptionWrapper.appendChild(description);
 		descriptionWrapper.appendChild(forceSyncBtn);
-
 		forceSyncBtn.textContent = "Force sync";
 		descriptionWrapper.classList.add("descriptionWrapper");
-		// descriptionWrapper.style.display = "flex";
-		// descriptionWrapper.style.justifyContent = "space-between";
 		wrapperList.classList.add("wrapperList");
 
 		const { user, teams } = this.plugin.settings;
 		// Step 2: Set content and attributes
 		title.textContent = "Click Up sync | Authorized";
 
-		// let textContent = `<div>User: ${user.username}<${user.email}></div>\n`;
-		// textContent += `<div>Workspaces: ${teams.map(
-		// 	(team) =>
-		// 		`${team.name}[Members: ${team.members
-		// 			.map(
-		// 				(u: any) =>
-		// 					`<div style="margin-top:10px">${u.user.username}</div>`
-		// 			)
-		// 			.join(",")}]`
-		// )} </div>`;
-
-		// description.innerHTML = textContent;
 		var div2 = document.createElement("div");
 		div2.textContent = `Workspaces:`;
 		description.appendChild(div2);
@@ -346,7 +321,7 @@ export class MainAppModal extends Modal {
 			team.members.forEach(function (u: any) {
 				var memberDiv = document.createElement("div");
 				memberDiv.textContent = u.user.username;
-				memberDiv.style.marginTop = "10px";
+				memberDiv.classList.add("teamMember");
 				membersDiv.appendChild(memberDiv);
 			});
 
@@ -416,7 +391,7 @@ export class MainAppModal extends Modal {
 
 			button.disabled = true;
 			button.textContent = "Loading...";
-			button.style.backgroundColor = "gray";
+			button.classList.add("forceSyncBtn");
 			localStorage.removeItem("token");
 			// isOpenSigninModal = true;
 
