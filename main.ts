@@ -9,8 +9,12 @@ import { SigninRequiredModal } from "components/SigninRequired";
 
 const configDir = app.vault.configDir;
 
+// dotenv.config({
+// 	path: `${configDir}/plugins/click-up-x-obsidian/.env`,
+// 	debug: true,
+// });
 dotenv.config({
-	path: `${configDir}/plugins/click-up-x-obsidian/.env`,
+	// path: `${basePath}/.obsidian/plugins/click-up-x-obsidian/.env`,
 	debug: false,
 });
 // Remember to rename these classes and interfaces!
@@ -39,6 +43,7 @@ export default class ClickUpPlugin extends Plugin {
 
 	async onload() {
 		console.log("loaded?");
+		console.log(process.env);
 		// Returns ClickUp code
 		this.registerObsidianProtocolHandler("plugin", async (e) => {
 			const parameters = e as TClickUpRedirectParams;
