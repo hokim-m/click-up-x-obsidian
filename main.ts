@@ -3,21 +3,11 @@ import { Editor, MarkdownView, Notice, Plugin } from "obsidian";
 import { MainAppModal, createTable } from "./signIn";
 import "./styles.css";
 import { createTask, getAuthorizedUser, getTasks, getTeams } from "./api";
-
 import * as dotenv from "dotenv";
 import { SigninRequiredModal } from "components/SigninRequired";
-
-const configDir = app.vault.configDir;
-
-// dotenv.config({
-// 	path: `${configDir}/plugins/click-up-x-obsidian/.env`,
-// 	debug: true,
-// });
 dotenv.config({
-	// path: `${basePath}/.obsidian/plugins/click-up-x-obsidian/.env`,
 	debug: false,
 });
-// Remember to rename these classes and interfaces!
 
 type TClickUpRedirectParams = {
 	action: string;
@@ -43,7 +33,6 @@ export default class ClickUpPlugin extends Plugin {
 
 	async onload() {
 		console.log("loaded?");
-		console.log(process.env);
 		// Returns ClickUp code
 		this.registerObsidianProtocolHandler("plugin", async (e) => {
 			const parameters = e as TClickUpRedirectParams;
