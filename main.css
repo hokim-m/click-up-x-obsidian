@@ -152,3 +152,6 @@
 .teamMember {
   margin-top: 10px;
 }
+.hideIcon {
+  display: none;
+}
