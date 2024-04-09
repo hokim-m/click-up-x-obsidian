@@ -5,6 +5,7 @@ import "./styles.css";
 import { createTask, getAuthorizedUser, getTasks, getTeams } from "./api";
 import * as dotenv from "dotenv";
 import { SigninRequiredModal } from "components/SigninRequired";
+import { ExampleSettingTab } from "components/tabSettings";
 dotenv.config({
 	debug: false,
 });
@@ -21,7 +22,7 @@ interface ClickUpPluginSettings {
 	teamId: string;
 }
 
-const DEFAULT_SETTINGS: ClickUpPluginSettings = {
+const DEFAULT_SETTINGS: Partial<ClickUpPluginSettings> = {
 	user: null,
 	teamId: "",
 	teams: [],
@@ -30,32 +31,48 @@ const DEFAULT_SETTINGS: ClickUpPluginSettings = {
 
 export default class ClickUpPlugin extends Plugin {
 	settings: ClickUpPluginSettings;
-
+	settingsTab: ExampleSettingTab;
 	async onload() {
 		console.log("loaded?");
-		// Returns ClickUp code
+		this.settingsTab = new ExampleSettingTab(this.app, this);
+		this.addSettingTab(this.settingsTab);
 		this.registerObsidianProtocolHandler("plugin", async (e) => {
 			const parameters = e as TClickUpRedirectParams;
 			localStorage.setItem("CLICK_UP_CODE", parameters.code);
 		});
 
 		await this.loadSettings();
-
-		// This creates an icon in the left ribbon.
-		this.addRibbonIcon(
-			"refresh-ccw-dot",
-			"x ClickUp",
-			(evt: MouseEvent) => {
-				// Called when the user clicks the icon.
-				new MainAppModal(this, (result) => {
-					new Notice(`Hello, ${result}!`);
-				}).open();
-			}
-		);
+		if (!Boolean(localStorage.getItem("token"))) {
+			this.addRibbonIcon(
+				"refresh-ccw-dot",
+				"x ClickUp",
+				(evt: MouseEvent) => {
+					// Called when the user clicks the icon.
+					new MainAppModal(this, (result) => {
+						new Notice(`Hello, ${result}!`);
+					}).open();
+				}
+			);
+		} else {
+			setTimeout(() => {
+				this.addRibbonIcon(
+					"refresh-ccw-dot",
+					"x ClickUp",
+					(evt: MouseEvent) => {
+						// Called when the user clicks the icon.
+						new MainAppModal(this, (result) => {
+							new Notice(`Hello, ${result}!`);
+						}).open();
+					}
+				);
+				this.hideIcon();
+			}, 2000);
+		}
 
 		this.addCommand({
 			id: "manual-create-task",
 			name: "Create ClickUp task",
+			// hotkeys: [{ modifiers: ["Mod" || "Ctrl", "Shift"], key: "c" }],
 			callback: async () => {
 				if (!this.settings.token) {
 					new SigninRequiredModal(this.app).open();
@@ -108,6 +125,16 @@ export default class ClickUpPlugin extends Plugin {
 			},
 		});
 	}
+	async hideIcon() {
+		const icons = document.querySelectorAll(".clickable-icon");
+		if (icons) {
+			icons.forEach((el) => {
+				if (el.ariaLabel === "x ClickUp") {
+					el.classList.add("hideIcon");
+				}
+			});
+		}
+	}
 
 	onunload() {}
 
@@ -121,7 +148,7 @@ export default class ClickUpPlugin extends Plugin {
 
 	async clearUser() {
 		localStorage.removeItem("token");
-		await this.saveData({ token: "", user: null, teams: [] });
+		await this.saveData({ token: null, user: null, teams: [] });
 	}
 
 	async loadSettings() {

@@ -1,12 +1,10 @@
-import { Modal } from "obsidian";
+import { Modal, Notice } from "obsidian";
 import MyPlugin from "./main";
 import {
 	getAllFolders,
 	getFolderlessList,
-	getFolders,
 	getList,
 	getSpaces,
-	getTasks,
 	getToken,
 } from "./api";
 import { createFolder } from "./app";
@@ -129,7 +127,6 @@ export class MainAppModal extends Modal {
 
 		const plugin = this.plugin;
 
-		// Step 1: Create HTML elements
 		const container = document.createElement("div");
 		const title = document.createElement("h1");
 		const description = document.createElement("p");
@@ -171,7 +168,16 @@ export class MainAppModal extends Modal {
 					await plugin.fetchUser(token);
 					button.toggleClass("renderAuthrizationBtnSucces", true);
 					button.textContent = "Success";
-					this.renderSettings();
+					const icons = document.querySelectorAll(".clickable-icon");
+					icons.forEach((el) => {
+						if (el.ariaLabel === "x ClickUp") {
+							el.classList.add("hideIcon");
+						}
+					});
+					new Notice("Succesfully", 3000);
+
+					this.plugin.settingsTab.renderSettings();
+					this.close();
 				}
 			}
 		});
@@ -279,148 +285,12 @@ export class MainAppModal extends Modal {
 		wrapper.appendChild(container);
 	}
 
-	async renderSettings() {
-		const { contentEl } = this;
-		contentEl.empty();
-		// Step 1: Create HTML elements
-		if (!localStorage.getItem("token")) {
-			this.renderAuthrization();
-			return;
-		}
-
-		const container = document.createElement("div");
-		const title = document.createElement("h1");
-		const descriptionWrapper = document.createElement("div");
-		const forceSyncBtn = document.createElement("button");
-
-		const description = document.createElement("p");
-		const button = document.createElement("button");
-		const wrapperList = document.createElement("div");
-		descriptionWrapper.appendChild(description);
-		descriptionWrapper.appendChild(forceSyncBtn);
-		forceSyncBtn.textContent = "Force sync";
-		descriptionWrapper.classList.add("descriptionWrapper");
-		wrapperList.classList.add("wrapperList");
-
-		const { user, teams } = this.plugin.settings;
-		// Step 2: Set content and attributes
-		title.textContent = "Click Up sync | Authorized";
-
-		var div2 = document.createElement("div");
-		div2.textContent = `Workspaces:`;
-		description.appendChild(div2);
-
-		// Iterate through teams
-		teams.forEach(function (team) {
-			// Create a div element for each team
-			var teamDiv = document.createElement("div");
-			teamDiv.textContent = `${team.name}[Members:`;
-
-			// Iterate through members of the team
-			var membersDiv = document.createElement("div");
-			team.members.forEach(function (u: any) {
-				var memberDiv = document.createElement("div");
-				memberDiv.textContent = u.user.username;
-				memberDiv.classList.add("teamMember");
-				membersDiv.appendChild(memberDiv);
-			});
-
-			// Append members div to team div
-			teamDiv.appendChild(membersDiv);
-
-			// Close the bracket for Members
-			teamDiv.textContent += "]";
-
-			// Append team div to the second part of the content
-			div2.appendChild(teamDiv);
-		});
-		forceSyncBtn.addEventListener("click", async () => {
-			await this.configureListsLocally();
-
-			const vaultPath = this.plugin.app.vault.getName();
-			createFolder(`ClickUp`);
-			for (const team of teams) {
-				createFolder(`ClickUp/${team.name}`);
-				const spaces = await getSpaces(team.id);
-				for (const space of spaces) {
-					createFolder(
-						`ClickUp/${team.name}/${space.name} - [${space.id}]`
-					);
-					const folders = await getFolders(space.id);
-
-					for (const folder of folders || []) {
-						// const list = await getList(folder.id)
-						createFolder(
-							`ClickUp/${team.name}/${space.name} - [${space.id}]/${folder.name}`
-						);
-					}
-
-					const folderless = await getFolderlessList(space.id);
-					for (const list_item of folderless) {
-						const vault = this.plugin.app.vault;
-						const tasks = await getTasks(list_item.id);
-						const rows = tasks.map((task: any, index: any) => {
-							return {
-								// id: task.id,
-								order: index + 1,
-								name: task.name,
-								status: task.status.status,
-								date_created: new Date(
-									Number(task.date_created)
-								).toLocaleString("en-US"),
-								creator: task.creator.username,
-								assignees: task.assignees.map(
-									(u: any) => u.username
-								),
-								priority: ["Low", "Medium", "High", "Critical"],
-							};
-						});
-						const tableHTML = createTable(rows);
-						const filePath = `/ClickUp/${team.name}/${space.name} - [${space.id}]/${list_item.name}[${list_item.id}].md`;
-						console.log(filePath);
-						vault.create(filePath, tableHTML);
-					}
-				}
-			}
-		});
-		button.textContent = "Log out";
-
-		button.addEventListener("click", () => {
-			// Step 3: Open link in a new browser tab/window
-			// Step 3: Add loading style
-
-			button.disabled = true;
-			button.textContent = "Loading...";
-			button.classList.add("forceSyncBtn");
-			localStorage.removeItem("token");
-			// isOpenSigninModal = true;
-
-			setTimeout(async () => {
-				button.disabled = false;
-				this.plugin.clearUser();
-				this.renderAuthrization();
-			}, 1200);
-		});
-
-		//space selection
-		await this.addSpacesSelectionEl(wrapperList);
-		await this.addDefaultListSelectionEl(wrapperList);
-
-		container.appendChild(title);
-		container.appendChild(wrapperList);
-		container.appendChild(descriptionWrapper);
-		container.appendChild(button);
-
-		contentEl.appendChild(container);
-	}
-
 	async initView() {
 		const { contentEl } = this;
 		const { user, token } = this.plugin.settings;
 		if (!token) {
 			return this.renderAuthrization();
 		}
-
 		if (!user) {
 			const container = document.createElement("div");
 			const title = document.createElement("h1");
@@ -435,7 +305,13 @@ export class MainAppModal extends Modal {
 				if (response) {
 					this.plugin.settings.user = response;
 					await this.plugin.saveSettings();
-					this.renderSettings();
+					const icons = document.querySelectorAll(".clickable-icon");
+					icons.forEach((el) => {
+						if (el.ariaLabel === "x ClickUp") {
+							el.classList.add("hideIcon");
+						} else {
+						}
+					});
 				} else {
 					await this.plugin.clearUser();
 					this.onOpen();
@@ -446,8 +322,6 @@ export class MainAppModal extends Modal {
 			}
 			return;
 		}
-
-		return this.renderSettings();
 	}
 
 	async onOpen() {
