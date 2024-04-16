@@ -2,10 +2,16 @@ import { CreateTaskModal } from "./components/CreateTaskModal";
 import { Editor, MarkdownView, Notice, Plugin } from "obsidian";
 import { MainAppModal, createTable } from "./signIn";
 import "./styles.css";
-import { createTask, getAuthorizedUser, getTasks, getTeams } from "./api";
+import {
+	createTask,
+	getAuthorizedUser,
+	getTasks,
+	getTeams,
+	showError,
+} from "./api";
 import * as dotenv from "dotenv";
 import { SigninRequiredModal } from "components/SigninRequired";
-import { ExampleSettingTab } from "components/tabSettings";
+import { ClickUpSettingTab } from "components/tabSettings";
 dotenv.config({
 	debug: false,
 });
@@ -31,10 +37,10 @@ const DEFAULT_SETTINGS: Partial<ClickUpPluginSettings> = {
 
 export default class ClickUpPlugin extends Plugin {
 	settings: ClickUpPluginSettings;
-	settingsTab: ExampleSettingTab;
+	settingsTab: ClickUpSettingTab;
 	async onload() {
 		console.log("loaded?");
-		this.settingsTab = new ExampleSettingTab(this.app, this);
+		this.settingsTab = new ClickUpSettingTab(this.app, this);
 		this.addSettingTab(this.settingsTab);
 		this.registerObsidianProtocolHandler("plugin", async (e) => {
 			const parameters = e as TClickUpRedirectParams;
@@ -42,31 +48,21 @@ export default class ClickUpPlugin extends Plugin {
 		});
 
 		await this.loadSettings();
-		if (!Boolean(localStorage.getItem("token"))) {
-			this.addRibbonIcon(
-				"refresh-ccw-dot",
-				"x ClickUp",
-				(evt: MouseEvent) => {
-					// Called when the user clicks the icon.
-					new MainAppModal(this, (result) => {
-						new Notice(`Hello, ${result}!`);
-					}).open();
-				}
-			);
+		if (!Boolean(localStorage.getItem("click_up_token"))) {
+			this.logOut();
 		} else {
-			setTimeout(() => {
-				this.addRibbonIcon(
-					"refresh-ccw-dot",
-					"x ClickUp",
-					(evt: MouseEvent) => {
-						// Called when the user clicks the icon.
-						new MainAppModal(this, (result) => {
-							new Notice(`Hello, ${result}!`);
-						}).open();
-					}
+			this.hideIcon();
+			this.saveSettings();
+			this.settingsTab.renderSettings();
+			const user = await getAuthorizedUser();
+			if (!user) {
+				new Notice(
+					"Error related to authorization,please re-login",
+					10000
 				);
-				this.hideIcon();
-			}, 2000);
+				this.logOut();
+			}
+			this.fetchUser(JSON.stringify(localStorage.getItem("token")));
 		}
 
 		this.addCommand({
@@ -118,14 +114,16 @@ export default class ClickUpPlugin extends Plugin {
 						new Notice("Created new task!", 3000);
 						this.syncronizeListNote(list.id);
 					}, 100);
-				} catch (e) {
-					//alert on error
-					console.log(e);
+				} catch (err) {
+					const handlerorr = await showError(err);
+					if (!handlerorr.isAuth) {
+						this.logOut();
+					}
 				}
 			},
 		});
 	}
-	async hideIcon() {
+	hideIcon() {
 		const icons = document.querySelectorAll(".clickable-icon");
 		if (icons) {
 			icons.forEach((el) => {
@@ -137,17 +135,26 @@ export default class ClickUpPlugin extends Plugin {
 	}
 
 	onunload() {}
-
+	async logOut() {
+		this.clearUser();
+		this.settingsTab.renderSignIn();
+		this.addRibbonIcon("refresh-ccw-dot", "x ClickUp", () => {
+			const modal = new MainAppModal(this, (result) => {
+				new Notice(`Hello, ${result}!`);
+			});
+			modal.open();
+			modal.renderAuthrization();
+		});
+	}
 	async fetchUser(token: string) {
 		const user = await getAuthorizedUser();
 		const teams = await getTeams();
 		await this.saveData({ user, token, teams });
-
 		await this.loadSettings();
 	}
 
 	async clearUser() {
-		localStorage.removeItem("token");
+		localStorage.removeItem("click_up_token");
 		await this.saveData({ token: null, user: null, teams: [] });
 	}
 

@@ -108,7 +108,7 @@
   border-radius: "5px";
 }
 .largeInput {
-  width: "300px";
+  width: "400px" !important;
 }
 .submitContainer {
   text-align: right;

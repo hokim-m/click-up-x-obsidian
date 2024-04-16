@@ -168,14 +168,8 @@ export class MainAppModal extends Modal {
 					await plugin.fetchUser(token);
 					button.toggleClass("renderAuthrizationBtnSucces", true);
 					button.textContent = "Success";
-					const icons = document.querySelectorAll(".clickable-icon");
-					icons.forEach((el) => {
-						if (el.ariaLabel === "x ClickUp") {
-							el.classList.add("hideIcon");
-						}
-					});
+					this.plugin.hideIcon();
 					new Notice("Succesfully", 3000);
-
 					this.plugin.settingsTab.renderSettings();
 					this.close();
 				}
@@ -305,13 +299,7 @@ export class MainAppModal extends Modal {
 				if (response) {
 					this.plugin.settings.user = response;
 					await this.plugin.saveSettings();
-					const icons = document.querySelectorAll(".clickable-icon");
-					icons.forEach((el) => {
-						if (el.ariaLabel === "x ClickUp") {
-							el.classList.add("hideIcon");
-						} else {
-						}
-					});
+					this.plugin.hideIcon();
 				} else {
 					await this.plugin.clearUser();
 					this.onOpen();
