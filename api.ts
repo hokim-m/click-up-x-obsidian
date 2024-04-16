@@ -1,8 +1,11 @@
 import { TAllLists, TCreateTask, TMember } from "api.types";
+import { ClickUpSettingTab } from "components/tabSettings";
+import ClickUpPlugin from "main";
+import { Notice } from "obsidian";
 
 const fetcher = (url: string, options: RequestInit = {}) => {
 	const PROXY_HOST = process.env.PROXY_HOST;
-	const token = localStorage.getItem("token") as string;
+	const token = localStorage.getItem("click_up_token") as string;
 	options.headers = {
 		...options.headers,
 		Authorization: token,
@@ -28,7 +31,7 @@ export const getToken = async (code: string) => {
 			access_token: string;
 			type: string;
 		};
-		localStorage.setItem("token", data.access_token);
+		localStorage.setItem("click_up_token", data.access_token);
 		return data.access_token;
 	} catch (error: any) {
 		console.error("Error during getToken()", error);
@@ -120,4 +123,19 @@ export const createTask = async ({
 
 	const responseData = await response.json();
 	return responseData;
+};
+interface ErrorResponse {
+	isAuth: boolean;
+	message: string;
+}
+export const showError = async (e: Error): Promise<ErrorResponse> => {
+	console.error(e);
+	if (e.message.includes("Oauth token not found")) {
+		new Notice("Error related to authorization,please re-login", 10000);
+		console.log("Error related to authorization,please re-login");
+		return { isAuth: false, message: "no auth" };
+	} else {
+		new Notice(`Error:${e.message}`, 5000);
+		return { isAuth: true, message: e.message };
+	}
 };

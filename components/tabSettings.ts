@@ -5,6 +5,7 @@ import {
 	getList,
 	getSpaces,
 	getTasks,
+	showError,
 } from "api";
 import ClickUpPlugin from "../main";
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
@@ -18,7 +19,7 @@ interface IList {
 	name: string;
 	id: string;
 }
-export class ExampleSettingTab extends PluginSettingTab {
+export class ClickUpSettingTab extends PluginSettingTab {
 	plugin: ClickUpPlugin;
 	constructor(app: App, plugin: ClickUpPlugin) {
 		super(app, plugin);
@@ -91,8 +92,14 @@ export class ExampleSettingTab extends PluginSettingTab {
 					});
 					dropdown.setDisabled(false);
 				} catch (error) {
+					const handlerorr = await showError(error);
+					if (!handlerorr.isAuth) {
+						this.plugin.logOut();
+					}
 					dropdown.disabled;
-					dropdown.addOption("", "doesnt registration");
+					this.renderSignIn();
+					title.textContent = "Something get wrong, please re-login";
+					dropdown.addOption("", "error");
 				}
 			});
 		new Setting(containerEl)
@@ -119,8 +126,14 @@ export class ExampleSettingTab extends PluginSettingTab {
 					dropdown.setDisabled(false);
 					title.textContent = "Settings";
 				} catch (error) {
+					const handlerorr = await showError(error);
+					if (!handlerorr.isAuth) {
+						this.plugin.logOut();
+					}
+					title.textContent = "Something get wrong, please re-login";
+					this.renderSignIn();
 					dropdown.disabled;
-					dropdown.addOption("", "doesnt registration");
+					dropdown.addOption("", "error");
 				}
 			})
 			.setDesc("");
@@ -235,23 +248,7 @@ export class ExampleSettingTab extends PluginSettingTab {
 			)
 			.addButton((btn) =>
 				btn.setButtonText("Log out").onClick(async () => {
-					const icons = document.querySelectorAll(".clickable-icon");
-					if (icons) {
-						console.log("exist");
-						icons.forEach((el) => {
-							if (el.ariaLabel === "x ClickUp") {
-								console.log("find");
-								el.classList.remove("hideIcon");
-							}
-						});
-					} else {
-						console.log("dont exist");
-					}
-
-					this.plugin.clearUser();
-					containerEl.empty();
-
-					this.renderSignIn();
+					this.plugin.logOut();
 				})
 			);
 	}
@@ -267,12 +264,13 @@ export class ExampleSettingTab extends PluginSettingTab {
 		);
 	}
 	async display(): Promise<void> {
-		if (localStorage.getItem("token")) {
+		if (localStorage.getItem("click_up_token")) {
 			this.renderSettings();
 		}
 
-		if (!localStorage.getItem("token")) {
+		if (!localStorage.getItem("click_up_token")) {
 			this.renderSignIn();
+			// this.plugin.showIcon();
 		}
 	}
 }
