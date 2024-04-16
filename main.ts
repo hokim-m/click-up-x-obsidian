@@ -68,9 +68,8 @@ export default class ClickUpPlugin extends Plugin {
 		this.addCommand({
 			id: "manual-create-task",
 			name: "Create ClickUp task",
-			// hotkeys: [{ modifiers: ["Mod" || "Ctrl", "Shift"], key: "c" }],
 			callback: async () => {
-				if (!this.settings.token) {
+				if (!localStorage.getItem("click_up_token")) {
 					new SigninRequiredModal(this.app).open();
 				} else {
 					new CreateTaskModal(this).open();
@@ -185,8 +184,9 @@ export default class ClickUpPlugin extends Plugin {
 		const vault = this.app.vault;
 		const tasks = await getTasks(id);
 		const rows = tasks.map((task: any, index: any) => {
+			console.log(task);
 			return {
-				id: task.id,
+				// id: task.id,
 				order: index + 1,
 				name: task.name,
 				status: task.status.status,
@@ -195,7 +195,7 @@ export default class ClickUpPlugin extends Plugin {
 				).toLocaleString("en-US"),
 				creator: task.creator.username,
 				assignees: task.assignees.map((u: any) => u.username),
-				priority: ["Low", "Medium", "High", "Critical"],
+				priority: task?.priority?.priority ?? "Low",
 			};
 		});
 		const tableHTML = createTable(rows);

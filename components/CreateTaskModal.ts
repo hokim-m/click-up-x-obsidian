@@ -124,7 +124,7 @@ export class CreateTaskModal extends Modal {
 			cls: "error-message",
 			text: "Please fill in all required fields!",
 		});
-		// container.appendChild(errorMessage);
+		errorMessage.toggleClass("errorMessageHide", true);
 
 		submitButton.addEventListener("click", () => {
 			console.clear();
