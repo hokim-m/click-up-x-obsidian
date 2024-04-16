@@ -94,30 +94,31 @@ If your plugin does not need CSS, delete this file.
 	margin-top: 5px;
 }
 .applyStylesToContainer {
-	display: "flex";
-	justify-content: "space-between";
-	align-items: "center";
-	height: "30px";
-	width: "500px";
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	height: 30px;
+	width: 500px;
+	gap: 30px;
 }
 .createSelectWithOptions {
 	width: 200px;
-	margin-bottom: "10px";
-	border: "1px solid #ccc";
-	border-radius: "5px";
+	margin-bottom: 10px;
+	border: 1px solid #ccc;
+	border-radius: 5px;
 }
 .largeSelect {
 	width: 300px;
 }
 .createInputWithPlaceholder {
-	width: "200px";
-	padding: "8px";
-	margin-bottom: "10px";
-	border: "1px solid #ccc";
-	border-radius: "5px";
+	width: 200px;
+	padding: 8px;
+	margin-bottom: 10px;
+	border: 1px solid #ccc;
+	border-radius: 5px;
 }
 .largeInput {
-	width: "400px" !important;
+	width: 300px !important;
 }
 .submitContainer {
 	text-align: right;

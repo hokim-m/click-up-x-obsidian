@@ -190,12 +190,9 @@ export class ClickUpSettingTab extends PluginSettingTab {
 											assignees: task.assignees.map(
 												(u: any) => u.username
 											),
-											priority: [
+											priority:
+												task?.priority?.priority ??
 												"Low",
-												"Medium",
-												"High",
-												"Critical",
-											],
 										};
 									}
 								);
