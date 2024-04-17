@@ -80,12 +80,12 @@ export function validateForm(container: HTMLDivElement): boolean {
 	return true;
 }
 export function getElementHTML(element: any) {
-	var tagName = element.tagName.toLowerCase();
-	var html = "<" + tagName;
+	const tagName = element.tagName.toLowerCase();
+	let html = "<" + tagName;
 
 	// Attributes
-	for (var i = 0; i < element.attributes.length; i++) {
-		var attr = element.attributes[i];
+	for (let i = 0; i < element.attributes.length; i++) {
+		let attr = element.attributes[i];
 		html += " " + attr.name + '="' + attr.value + '"';
 	}
 
@@ -95,7 +95,7 @@ export function getElementHTML(element: any) {
 	// Children
 	if (element.childNodes.length > 0) {
 		for (var i = 0; i < element.childNodes.length; i++) {
-			var child = element.childNodes[i];
+			let child = element.childNodes[i];
 			if (child.nodeType === Node.TEXT_NODE) {
 				// Text node
 				html += child.textContent;
