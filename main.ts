@@ -80,7 +80,7 @@ export default class ClickUpPlugin extends Plugin {
 		this.addCommand({
 			id: "create-task",
 			name: "Create ClickUp task from selection",
-			hotkeys: [{ modifiers: ["Mod" || "Ctrl", "Shift"], key: "c" }],
+			// hotkeys: [{ modifiers: ["Mod" || "Ctrl", "Shift"], key: "c" }],
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
 				const sel = editor.getSelection();
 				const defaultList = localStorage.getItem("selectedList");
