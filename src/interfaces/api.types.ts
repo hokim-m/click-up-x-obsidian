@@ -72,3 +72,11 @@ type TMemberProfileInfo = {
 	viewed_verified_consultant: any;
 	viewed_top_tier_user: any;
 };
+export interface ISpace {
+	name: string;
+	id: string;
+}
+export interface IList {
+	name: string;
+	id: string;
+}

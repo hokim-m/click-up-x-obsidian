@@ -1,7 +1,7 @@
 import { CreateTaskModal } from "./components/CreateTaskModal";
 import { Editor, MarkdownView, Notice, Plugin } from "obsidian";
-import { MainAppModal, createTable } from "./signIn";
-import "./styles.css";
+import { MainAppModal } from "./signIn";
+import "../styles.css";
 import {
 	createTask,
 	getAuthorizedUser,
@@ -10,8 +10,10 @@ import {
 	showError,
 } from "./api";
 import * as dotenv from "dotenv";
-import { SigninRequiredModal } from "components/SigninRequired";
-import { ClickUpSettingTab } from "components/tabSettings";
+import { SigninRequiredModal } from "src/components/SigninRequired";
+import { ClickUpSettingTab } from "src/settings";
+import { createTable } from "src/components/utils";
+import { TCreateTask } from "./interfaces/api.types";
 dotenv.config({
 	debug: false,
 });
@@ -38,11 +40,11 @@ const DEFAULT_SETTINGS: Partial<ClickUpPluginSettings> = {
 export default class ClickUpPlugin extends Plugin {
 	settings: ClickUpPluginSettings;
 	settingsTab: ClickUpSettingTab;
+	modal: MainAppModal;
 	async onload() {
-		console.log("loaded?");
 		this.settingsTab = new ClickUpSettingTab(this.app, this);
 		this.addSettingTab(this.settingsTab);
-		this.registerObsidianProtocolHandler("plugin", async (e) => {
+		this.registerObsidianProtocolHandler("ClickUpPlugin", async (e) => {
 			const parameters = e as TClickUpRedirectParams;
 			localStorage.setItem("CLICK_UP_CODE", parameters.code);
 		});
@@ -51,7 +53,6 @@ export default class ClickUpPlugin extends Plugin {
 		if (!Boolean(localStorage.getItem("click_up_token"))) {
 			this.logOut();
 		} else {
-			this.hideIcon();
 			this.saveSettings();
 			this.settingsTab.renderSettings();
 			const user = await getAuthorizedUser();
@@ -83,26 +84,31 @@ export default class ClickUpPlugin extends Plugin {
 			// hotkeys: [{ modifiers: ["Mod" || "Ctrl", "Shift"], key: "c" }],
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
 				const sel = editor.getSelection();
+				console.log(sel, "Selection");
 				const defaultList = localStorage.getItem("selectedList");
 
 				if (!sel) {
 					return;
 				}
 				if (!defaultList) {
+					new Notice("Please select a sheet in settings");
 					return;
 				}
 				const list = JSON.parse(defaultList);
+				const requestData: TCreateTask = {
+					name: sel,
+					description: "",
+					assignees: [],
+					priority: 3,
+				};
 				try {
 					const task = await createTask({
-						data: {
-							name: sel,
-							description: "",
-							assignees: [],
-							priority: 3,
-						},
+						data: requestData,
 						listId: list.id,
 					});
+					console.log(task);
 					if (task.err) {
+						console.log(task);
 						throw new Error(task.err);
 					}
 					setTimeout(() => {
@@ -122,28 +128,11 @@ export default class ClickUpPlugin extends Plugin {
 			},
 		});
 	}
-	hideIcon() {
-		const icons = document.querySelectorAll(".clickable-icon");
-		if (icons) {
-			icons.forEach((el) => {
-				if (el.ariaLabel === "x ClickUp") {
-					el.classList.add("hideIcon");
-				}
-			});
-		}
-	}
 
-	onunload() {}
 	async logOut() {
 		this.clearUser();
 		this.settingsTab.renderSignIn();
-		this.addRibbonIcon("refresh-ccw-dot", "x ClickUp", () => {
-			const modal = new MainAppModal(this, (result) => {
-				new Notice(`Hello, ${result}!`);
-			});
-			modal.open();
-			modal.renderAuthrization();
-		});
+		this.modal = new MainAppModal(this);
 	}
 	async fetchUser(token: string) {
 		const user = await getAuthorizedUser();
@@ -153,7 +142,10 @@ export default class ClickUpPlugin extends Plugin {
 	}
 
 	async clearUser() {
+		localStorage.removeItem("lists");
+		localStorage.removeItem("selectedList");
 		localStorage.removeItem("click_up_token");
+		localStorage.removeItem("selectedSpace");
 		await this.saveData({ token: null, user: null, teams: [] });
 	}
 
@@ -170,8 +162,7 @@ export default class ClickUpPlugin extends Plugin {
 	}
 
 	async syncronizeListNote(id: string) {
-		// console.log(app.vault)
-		const note = app.vault
+		const note = this.app.vault
 			.getFiles()
 			.filter((f) => f.path.startsWith("ClickUp"))
 			.find((f) => f.path.includes(`[${id}]`));
@@ -184,7 +175,6 @@ export default class ClickUpPlugin extends Plugin {
 		const vault = this.app.vault;
 		const tasks = await getTasks(id);
 		const rows = tasks.map((task: any, index: any) => {
-			console.log(task);
 			return {
 				// id: task.id,
 				order: index + 1,
