@@ -1,5 +1,4 @@
 import { Modal, Notice } from "obsidian";
-import MyPlugin from "./main";
 import {
 	getAllFolders,
 	getFolderlessList,
@@ -7,10 +6,10 @@ import {
 	getSpaces,
 	getToken,
 } from "./api";
-import { createFolder } from "./app";
-import { SIGNIN_STEPS } from "components/constants";
-import { createInputWithPlaceholder, getElementHTML } from "components/utils";
-
+import { SIGNIN_STEPS } from "src/components/constants";
+import { createInputWithPlaceholder } from "src/components/utils";
+import ClickUpPlugin from "./main";
+import "../styles.css";
 interface ISpace {
 	name: string;
 	id: string;
@@ -19,67 +18,15 @@ interface IList {
 	name: string;
 	id: string;
 }
-export const createTable = (data: any) => {
-	const table = document.createElement("table");
-	table.classList.add("my-table");
-
-	// Create table header
-	const thead = document.createElement("thead");
-	const headerRow = document.createElement("tr");
-	const headers = [
-		"Order",
-		"Name",
-		"Status",
-		"Date Created",
-		"Creator",
-		"Assignee",
-		"Priority",
-	];
-	headers.forEach((headerText) => {
-		const th = document.createElement("th");
-		th.textContent = headerText;
-		headerRow.appendChild(th);
-	});
-	thead.appendChild(headerRow);
-	table.appendChild(thead);
-
-	// Create table body
-	const tbody = document.createElement("tbody");
-	data.forEach((task: any) => {
-		const row = document.createElement("tr");
-		Object.values(task).forEach((value) => {
-			const cell = document.createElement("td");
-			if (Array.isArray(value)) {
-				const select = document.createElement("select");
-				value.map(String).forEach((item) => {
-					const option = document.createElement("option");
-					option.value = item;
-					option.textContent = item;
-					select.appendChild(option);
-				});
-				cell.appendChild(select);
-			} else {
-				cell.textContent = String(value);
-			}
-			row.appendChild(cell);
-		});
-		tbody.appendChild(row);
-	});
-	table.appendChild(tbody);
-
-	return getElementHTML(table);
-};
 
 export class MainAppModal extends Modal {
 	result: string;
-	plugin: MyPlugin;
-
+	plugin: ClickUpPlugin;
 	onSubmit: (result: string) => void;
-
-	constructor(plugin: MyPlugin, onSubmit: (result: string) => void) {
+	constructor(plugin: ClickUpPlugin) {
 		super(plugin.app);
 		this.plugin = plugin;
-		this.onSubmit = onSubmit;
+		this.renderAuthrization();
 	}
 
 	async loadSpaces(): Promise<ISpace[]> {
@@ -168,8 +115,7 @@ export class MainAppModal extends Modal {
 					await plugin.fetchUser(token);
 					button.toggleClass("renderAuthrizationBtnSucces", true);
 					button.textContent = "Success";
-					this.plugin.hideIcon();
-					new Notice("Succesfully", 3000);
+					new Notice("Succes", 3000);
 					this.plugin.settingsTab.renderSettings();
 					this.close();
 				}
@@ -182,9 +128,7 @@ export class MainAppModal extends Modal {
 		container.appendChild(description);
 		container.appendChild(steps);
 		container.appendChild(button);
-
 		contentEl.appendChild(container);
-		// console.log("Files in the current directory:", files);
 	}
 
 	async addDefaultListSelectionEl(wrapper: any) {
@@ -277,47 +221,5 @@ export class MainAppModal extends Modal {
 		container.appendChild(listSelect);
 		container.classList.add("addDefaultListSelectionEl-container");
 		wrapper.appendChild(container);
-	}
-
-	async initView() {
-		const { contentEl } = this;
-		const { user, token } = this.plugin.settings;
-		if (!token) {
-			return this.renderAuthrization();
-		}
-		if (!user) {
-			const container = document.createElement("div");
-			const title = document.createElement("h1");
-			title.textContent = "Loading...";
-			container.appendChild(title);
-			contentEl.appendChild(container);
-
-			try {
-				const response: any = await this.plugin.fetchUser(
-					this.plugin.settings.token
-				);
-				if (response) {
-					this.plugin.settings.user = response;
-					await this.plugin.saveSettings();
-					this.plugin.hideIcon();
-				} else {
-					await this.plugin.clearUser();
-					this.onOpen();
-					return;
-				}
-			} catch (e: any) {
-				console.log(e);
-			}
-			return;
-		}
-	}
-
-	async onOpen() {
-		this.initView();
-	}
-
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
 	}
 }

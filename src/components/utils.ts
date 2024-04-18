@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-inferrable-types */
+import { Vault } from "obsidian";
+
 export function applyStylesToContainer(
 	container: HTMLDivElement,
 	child: {
@@ -111,3 +112,82 @@ export function getElementHTML(element: any) {
 
 	return html;
 }
+export const createTable = (data: any) => {
+	const table = document.createElement("table");
+	table.classList.add("my-table");
+	const thead = document.createElement("thead");
+	const headerRow = document.createElement("tr");
+	const headers = [
+		"Order",
+		"Name",
+		"Status",
+		"Date Created",
+		"Creator",
+		"Assignee",
+		"Priority",
+	];
+	headers.forEach((headerText) => {
+		const th = document.createElement("th");
+		th.textContent = headerText;
+		headerRow.appendChild(th);
+	});
+	thead.appendChild(headerRow);
+	table.appendChild(thead);
+
+	// Create table body
+	const tbody = document.createElement("tbody");
+	data.forEach((task: any) => {
+		const row = document.createElement("tr");
+		Object.values(task).forEach((value) => {
+			const cell = document.createElement("td");
+			if (Array.isArray(value)) {
+				const select = document.createElement("select");
+				value.map(String).forEach((item) => {
+					const option = document.createElement("option");
+					option.value = item;
+					option.textContent = item;
+					select.appendChild(option);
+				});
+				cell.appendChild(select);
+			} else {
+				cell.textContent = String(value);
+			}
+			row.appendChild(cell);
+		});
+		tbody.appendChild(row);
+	});
+	table.appendChild(tbody);
+
+	return getElementHTML(table);
+};
+export const createFolder = ({
+	folder,
+	vault,
+}: {
+	folder: string;
+	vault: Vault;
+}) => {
+	const fs = vault;
+
+	function createPath(folder: string) {
+		fs.createFolder(folder)
+			.then(() => {
+				// console.log(`Folder created: ${folder}`);
+				return true;
+			})
+			.catch((err: { message: string }) => {
+				if (
+					err.message === "Folder already exists." ||
+					err.message === "File already exists."
+				) {
+					return true;
+				} else {
+					// console.error("failed create folder/file" + folder);
+
+					return false;
+				}
+			});
+	}
+
+	createPath(`${folder}`);
+};

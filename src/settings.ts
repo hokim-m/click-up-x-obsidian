@@ -6,19 +6,12 @@ import {
 	getSpaces,
 	getTasks,
 	showError,
-} from "api";
-import ClickUpPlugin from "../main";
+} from "src/api";
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
-import { createFolder } from "app";
-import { MainAppModal, createTable } from "signIn";
-interface ISpace {
-	name: string;
-	id: string;
-}
-interface IList {
-	name: string;
-	id: string;
-}
+import { createFolder, createTable } from "./components/utils";
+import ClickUpPlugin from "src/main";
+import { IList, ISpace } from "./interfaces/api.types";
+
 export class ClickUpSettingTab extends PluginSettingTab {
 	plugin: ClickUpPlugin;
 	constructor(app: App, plugin: ClickUpPlugin) {
@@ -65,17 +58,12 @@ export class ClickUpSettingTab extends PluginSettingTab {
 		let { containerEl } = this;
 		const { teams } = this.plugin.settings;
 		containerEl.empty();
-		let title = containerEl.createEl("h2", {
-			text: "Loadings...",
-			cls: "title_settings",
-		});
-
 		new Setting(containerEl)
 			.setName("Select space")
 			.addDropdown(async (dropdown) => {
 				dropdown.setDisabled(true);
 				try {
-					title.textContent = "Loadings...";
+					// title.textContent = "Loadings...";
 					const spaces = await this.loadSpaces();
 					let selectedSpace = "";
 					if (localStorage.getItem("selectedSpace")) {
@@ -98,12 +86,12 @@ export class ClickUpSettingTab extends PluginSettingTab {
 					}
 					dropdown.disabled;
 					this.renderSignIn();
-					title.textContent = "Something get wrong, please re-login";
+					// title.textContent = "Something get wrong, please re-login";
 					dropdown.addOption("", "error");
 				}
 			});
 		new Setting(containerEl)
-			.setName("Select Default Sheet")
+			.setName("Select default sheet")
 
 			.addDropdown(async (dropdown) => {
 				dropdown.setDisabled(true);
@@ -124,13 +112,13 @@ export class ClickUpSettingTab extends PluginSettingTab {
 						localStorage.setItem("selectedList", value);
 					});
 					dropdown.setDisabled(false);
-					title.textContent = "Settings";
+					// title.textContent = "Settings";
 				} catch (error) {
 					const handlerorr = await showError(error);
 					if (!handlerorr.isAuth) {
 						this.plugin.logOut();
 					}
-					title.textContent = "Something get wrong, please re-login";
+					// title.textContent = "Something get wrong";
 					this.renderSignIn();
 					dropdown.disabled;
 					dropdown.addOption("", "error");
@@ -138,36 +126,38 @@ export class ClickUpSettingTab extends PluginSettingTab {
 			})
 			.setDesc("");
 		new Setting(containerEl)
-			.setName(`WorkSpaces: ${teams[0]?.name ?? "doesnt registration"}`)
+			.setName(`WorkSpaces: ${teams[0]?.name}`)
 			.setDesc(
-				`Members:[${
-					teams[0]?.members.map(
-						(member: { user: { username: string } }) =>
-							`${member.user.username},`
-					) ?? "doesnt registration"
-				}]`
+				`Members:[${teams[0]?.members.map(
+					(member: { user: { username: string } }) =>
+						`${member.user.username},`
+				)}]`
 			)
-
 			.addButton((btn) => {
 				btn.setButtonText("sync");
 
 				btn.onClick(async () => {
 					new Notice(`Loading...`, 3000);
 					await this.configureListsLocally();
-					createFolder(`ClickUp`);
+					createFolder({ folder: `ClickUp`, vault: this.app.vault });
 					for (const team of teams) {
-						createFolder(`ClickUp/${team.name}`);
+						createFolder({
+							folder: `ClickUp/${team.name}`,
+							vault: this.app.vault,
+						});
 						const spaces = await getSpaces(team.id);
 						for (const space of spaces) {
-							createFolder(
-								`ClickUp/${team.name}/${space.name} - [${space.id}]`
-							);
+							createFolder({
+								folder: `ClickUp/${team.name}/${space.name} - [${space.id}]`,
+								vault: this.app.vault,
+							});
 							const folders = await getFolders(space.id);
 
 							for (const folder of folders || []) {
-								createFolder(
-									`ClickUp/${team.name}/${space.name} - [${space.id}]/${folder.name}`
-								);
+								createFolder({
+									folder: `ClickUp/${team.name}/${space.name} - [${space.id}]/${folder.name}`,
+									vault: this.app.vault,
+								});
 							}
 
 							const folderless = await getFolderlessList(
@@ -252,11 +242,10 @@ export class ClickUpSettingTab extends PluginSettingTab {
 	renderSignIn() {
 		let { containerEl } = this;
 		containerEl.empty();
-		new Setting(containerEl).setName("Sign In Modal").addButton((button) =>
+		new Setting(containerEl).setName("Sign In").addButton((button) =>
 			button.setButtonText("Sign In").onClick(async () => {
-				let modal = new MainAppModal(this.plugin, () => {});
-				modal.renderAuthrization();
-				modal.open();
+				// new MainAppModal(this.plugin).open();
+				this.plugin.modal.open();
 			})
 		);
 	}
@@ -267,7 +256,6 @@ export class ClickUpSettingTab extends PluginSettingTab {
 
 		if (!localStorage.getItem("click_up_token")) {
 			this.renderSignIn();
-			// this.plugin.showIcon();
 		}
 	}
 }

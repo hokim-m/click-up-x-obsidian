@@ -1,16 +1,19 @@
-import { TAllLists, TCreateTask, TMember } from "api.types";
-import { ClickUpSettingTab } from "components/tabSettings";
-import ClickUpPlugin from "main";
-import { Notice } from "obsidian";
+import { TAllLists, TCreateTask, TMember } from "src/interfaces/api.types";
+import { Notice, requestUrl } from "obsidian";
 
 const fetcher = (url: string, options: RequestInit = {}) => {
 	const PROXY_HOST = process.env.PROXY_HOST;
 	const token = localStorage.getItem("click_up_token") as string;
-	options.headers = {
-		...options.headers,
-		Authorization: token,
-	};
-	return fetch(`${PROXY_HOST}${url}`, options);
+	const request = requestUrl({
+		url: `${PROXY_HOST}${url}`,
+		headers: {
+			Authorization: token,
+			"Content-Type": "application/json",
+		},
+		method: options.method,
+		body: options.body as string,
+	});
+	return request;
 };
 
 export const getToken = async (code: string) => {
@@ -27,7 +30,7 @@ export const getToken = async (code: string) => {
 		const resp = await fetcher(`/api/v2/oauth/token?${query}`, {
 			method: "POST",
 		});
-		const data = (await resp.json()) as {
+		const data = (await resp.json) as {
 			access_token: string;
 			type: string;
 		};
@@ -40,43 +43,43 @@ export const getToken = async (code: string) => {
 
 export const getAuthorizedUser = async () => {
 	const resp = await fetcher(`/api/v2/user`);
-	const data = await resp.json();
+	const data = await resp.json;
 	return data.user;
 };
 export const getTeams = async () => {
 	const resp = await fetcher(`/api/v2/team`);
-	const data = await resp.json();
+	const data = await resp.json;
 
 	return data.teams;
 };
 
 export const getSpaces = async (team_id: string) => {
 	const response = await fetcher(`/api/v2/team/${team_id}/space`);
-	const data = await response.json();
+	const data = await response.json;
 	return data.spaces;
 };
 
 export const getFolders = async (space_id: string) => {
 	const response = await fetcher(`/api/v2/team/space/${space_id}/folder`);
-	const data = await response.json();
+	const data = await response.json;
 	return data.folders;
 };
 
 export const getList = async (folder_id: string) => {
 	const response = await fetcher(`/api/v2/team/${folder_id}/space`);
-	const data = await response.json();
+	const data = await response.json;
 	return data.lists;
 };
 
 export const getFolderlessList = async (space_id: string) => {
 	const response = await fetcher(`/api/v2/space/${space_id}/list`);
-	const data = await response.json();
+	const data = await response.json;
 	return data.lists;
 };
 
 export const getTasks = async (list_id: string) => {
 	const response = await fetcher(`/api/v2/list/${list_id}/task`);
-	const data = await response.json();
+	const data = await response.json;
 	return data.tasks;
 };
 
@@ -84,25 +87,25 @@ export const getClickupLists = async (
 	folderId: string
 ): Promise<TAllLists[]> => {
 	const response = await fetcher(`/api/v2/folder/${folderId}/list`);
-	const data = await response.json();
+	const data = await response.json;
 	return data.lists;
 };
 
 export const getWorkspaceUser = async (teamId: string, userId: string) => {
 	const response = await fetcher(`/api/v2/team/${teamId}/user/${userId}`);
-	const data = await response.json();
+	const data = await response.json;
 	return data;
 };
 
 export const getAllFolders = async (space_id: string) => {
 	const response = await fetcher(`/api/v2/space/${space_id}/folder`);
-	const data = await response.json();
+	const data = await response.json;
 	return data.folders;
 };
 
 export const getListMembers = async (list_id: string): Promise<TMember[]> => {
 	const response = await fetcher(`/api/v2/list/${list_id}/member`);
-	const data = await response.json();
+	const data = await response.json;
 	return data.members;
 };
 
@@ -120,8 +123,7 @@ export const createTask = async ({
 			"Content-Type": "application/json",
 		},
 	});
-
-	const responseData = await response.json();
+	const responseData = await response.json;
 	return responseData;
 };
 interface ErrorResponse {
@@ -129,7 +131,7 @@ interface ErrorResponse {
 	message: string;
 }
 export const showError = async (e: Error): Promise<ErrorResponse> => {
-	console.error(e);
+	console.log(e);
 	if (e.message.includes("Oauth token not found")) {
 		new Notice("Error related to authorization,please re-login", 10000);
 		console.log("Error related to authorization,please re-login");

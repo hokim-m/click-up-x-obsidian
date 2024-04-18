@@ -1,5 +1,5 @@
 import { Modal, Notice } from "obsidian";
-import "../styles.css";
+import "../../styles.css";
 import {
 	applyStylesToContainer,
 	createInputWithPlaceholder,
@@ -12,30 +12,73 @@ import {
 	firstListOption,
 	prioritySelectOptions,
 } from "./constants";
-import { createTask, getListMembers } from "api";
-import ClickUpPlugin from "main";
-import { TCreateTask, TMember } from "api.types";
+import {
+	createTask,
+	getAllFolders,
+	getFolderlessList,
+	getList,
+	getListMembers,
+	getSpaces,
+} from "src/api";
+import { IList, TCreateTask, TMember } from "src/interfaces/api.types";
+import ClickUpPlugin from "src/main";
 
 export class CreateTaskModal extends Modal {
 	plugin: ClickUpPlugin;
 	constructor(plugin: ClickUpPlugin) {
 		super(plugin.app);
 		this.plugin = plugin;
+		this.configureListsLocally();
 	}
+	async loadLists(): Promise<IList[]> {
+		const { teams } = this.plugin.settings;
+		const lists: IList[] = [];
+		for (const team of teams) {
+			const spaces = await getSpaces(team.id);
+			for (const space of spaces) {
+				const folders = await getAllFolders(space.id);
 
-	onOpen() {
-		const listsJson = localStorage.getItem("lists") ?? "";
-		const lists: { id: string; name: string }[] = JSON.parse(listsJson);
-		const listSelects = lists.map((item) => ({
-			text: item.name,
-			value: item.id,
-		}));
+				for (const folder of folders || []) {
+					const fList = (await getList(folder.id)) || [];
+					fList.forEach((l: any) =>
+						lists.push({ name: l.name, id: l.id })
+					);
+				}
+				const folderless = (await getFolderlessList(space.id)) || [];
+				folderless.forEach((l: any) =>
+					lists.push({ name: l.name, id: l.id })
+				);
+			}
+		}
+		return lists;
+	}
+	async configureListsLocally() {
+		const lists: IList[] = await this.loadLists();
+		localStorage.setItem("lists", JSON.stringify(lists));
+	}
+	async onOpen() {
+		const { contentEl } = this;
+		let listSelects: { value: string | number; text: string }[] | null =
+			null;
+		const loading = contentEl.createEl("h3", { text: "Loading..." });
 
+		try {
+			const lists: { id: string; name: string }[] =
+				await this.loadLists();
+			listSelects = lists.map((item) => ({
+				text: item.name,
+				value: item.id,
+			}));
+			contentEl.removeChild(loading);
+		} catch (error) {
+			loading.textContent = "Something get wrong";
+		}
+		if (!listSelects) {
+			return;
+		}
 		let listMember: TMember[] = [];
 
 		const listSelectOptions = [firstListOption, ...listSelects];
-
-		const { contentEl } = this;
 
 		const container = document.createElement("div");
 		const title = document.createElement("h2");
@@ -50,8 +93,6 @@ export class CreateTaskModal extends Modal {
 		const assigneeSelectOptions = [firstAssigneeOption, ...listMember];
 
 		listSelect.element.addEventListener("change", async () => {
-			console.log("list select value", listSelect.element.value);
-
 			const members = await getListMembers(listSelect.element.value);
 
 			listMember = members.map((member) => ({
@@ -70,8 +111,6 @@ export class CreateTaskModal extends Modal {
 					text: option.text,
 				})
 			);
-
-			console.log("listMember", listMember);
 		});
 
 		const assigneeSelect = createSelectWithOptions(
@@ -177,8 +216,13 @@ export class CreateTaskModal extends Modal {
 			assignees: [Number(assignee)],
 			priority: Number(priority),
 		};
+
 		try {
 			await createTask({
+				data: requestData,
+				listId: list,
+			});
+			console.log({
 				data: requestData,
 				listId: list,
 			});
