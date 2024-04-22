@@ -99,17 +99,20 @@ export class ClickUpSettingTab extends PluginSettingTab {
 					const lists = await this.loadLists();
 					let selectedSheet = "";
 					lists.forEach((list) => {
-						dropdown.addOption(list.id, list.name);
+						dropdown.addOption(list.id.toString(), list.name);
 					});
 					if (localStorage.getItem("selectedList")) {
-						const selectedList = JSON.parse(
-							localStorage.getItem("selectedList") ?? "{}"
-						);
-						selectedSheet = selectedList.id ?? lists[0].id;
+						const selectedList =
+							localStorage.getItem("selectedList");
+						selectedSheet = selectedList ?? lists[0].id;
+					} else {
 					}
 					dropdown.setValue(selectedSheet);
 					dropdown.onChange((value) => {
-						localStorage.setItem("selectedList", value);
+						localStorage.setItem(
+							"selectedList",
+							JSON.stringify(value)
+						);
 					});
 					dropdown.setDisabled(false);
 				} catch (error) {
