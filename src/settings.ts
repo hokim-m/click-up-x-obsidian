@@ -30,26 +30,26 @@ export class ClickUpSettingTab extends PluginSettingTab {
 	}
 	async loadLists(): Promise<IList[]> {
 		const { teams } = this.plugin.settings;
-		const lists: IList[] = [];
+		let lists: IList[] = [];
+
 		for (const team of teams) {
 			const spaces = await getSpaces(team.id);
+
 			for (const space of spaces) {
 				const folders = await getAllFolders(space.id);
+				const folderlessLists = await getFolderlessList(space.id);
+				lists.push(...folderlessLists);
+				for (const folder of folders) {
+					const folderlists = await getList(folder.id);
 
-				for (const folder of folders || []) {
-					const fList = (await getList(folder.id)) || [];
-					fList.forEach((l: any) =>
-						lists.push({ name: l.name, id: l.id })
-					);
+					lists.push(...folderlists);
 				}
-				const folderless = (await getFolderlessList(space.id)) || [];
-				folderless.forEach((l: any) =>
-					lists.push({ name: l.name, id: l.id })
-				);
 			}
 		}
+
 		return lists;
 	}
+
 	async configureListsLocally() {
 		const lists: IList[] = await this.loadLists();
 		localStorage.setItem("lists", JSON.stringify(lists));
@@ -98,27 +98,25 @@ export class ClickUpSettingTab extends PluginSettingTab {
 				try {
 					const lists = await this.loadLists();
 					let selectedSheet = "";
-					if (localStorage.getItem("selectedList")) {
-						selectedSheet =
-							localStorage.getItem("selectedList") ??
-							JSON.stringify(lists[0]);
-					}
 					lists.forEach((list) => {
-						dropdown.addOption(JSON.stringify(list), list.name);
+						dropdown.addOption(list.id, list.name);
 					});
-
+					if (localStorage.getItem("selectedList")) {
+						const selectedList = JSON.parse(
+							localStorage.getItem("selectedList") ?? "{}"
+						);
+						selectedSheet = selectedList.id ?? lists[0].id;
+					}
 					dropdown.setValue(selectedSheet);
 					dropdown.onChange((value) => {
 						localStorage.setItem("selectedList", value);
 					});
 					dropdown.setDisabled(false);
-					// title.textContent = "Settings";
 				} catch (error) {
 					const handlerorr = await showError(error);
 					if (!handlerorr.isAuth) {
 						this.plugin.logOut();
 					}
-					// title.textContent = "Something get wrong";
 					this.renderSignIn();
 					dropdown.disabled;
 					dropdown.addOption("", "error");

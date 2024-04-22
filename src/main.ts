@@ -50,24 +50,18 @@ export default class ClickUpPlugin extends Plugin {
 		});
 
 		await this.loadSettings();
+		this.modal = new MainAppModal(this);
 		if (!Boolean(localStorage.getItem("click_up_token"))) {
 			this.logOut();
 		} else {
 			this.saveSettings();
 			this.settingsTab.renderSettings();
-			const user = await getAuthorizedUser();
-			if (!user) {
-				new Notice(
-					"Error related to authorization,please re-login",
-					10000
-				);
-				this.logOut();
-			}
+
 			this.fetchUser(JSON.stringify(localStorage.getItem("token")));
 		}
 
 		this.addCommand({
-			id: "manual-create-task",
+			id: "manual-create-task-clickUp",
 			name: "Create ClickUp task",
 			callback: async () => {
 				if (!localStorage.getItem("click_up_token")) {
@@ -77,9 +71,8 @@ export default class ClickUpPlugin extends Plugin {
 				}
 			},
 		});
-
 		this.addCommand({
-			id: "create-task",
+			id: "create-task-clickUp-selection",
 			name: "Create ClickUp task from selection",
 			// hotkeys: [{ modifiers: ["Mod" || "Ctrl", "Shift"], key: "c" }],
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
@@ -132,7 +125,6 @@ export default class ClickUpPlugin extends Plugin {
 	async logOut() {
 		this.clearUser();
 		this.settingsTab.renderSignIn();
-		this.modal = new MainAppModal(this);
 	}
 	async fetchUser(token: string) {
 		const user = await getAuthorizedUser();
