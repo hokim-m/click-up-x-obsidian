@@ -2,10 +2,9 @@ import { TAllLists, TCreateTask, TMember } from "src/interfaces/api.types";
 import { Notice, requestUrl } from "obsidian";
 
 const fetcher = (url: string, options: RequestInit = {}) => {
-	const PROXY_HOST = process.env.PROXY_HOST;
 	const token = localStorage.getItem("click_up_token") as string;
 	const request = requestUrl({
-		url: `${PROXY_HOST}${url}`,
+		url: `https://app.clickup.com/api/v2/${url}`,
 		headers: {
 			Authorization: token,
 			"Content-Type": "application/json",
@@ -27,7 +26,7 @@ export const getToken = async (code: string) => {
 	}).toString();
 
 	try {
-		const resp = await fetcher(`/api/v2/oauth/token?${query}`, {
+		const resp = await fetcher(`oauth/token?${query}`, {
 			method: "POST",
 		});
 		const data = (await resp.json) as {
@@ -42,43 +41,43 @@ export const getToken = async (code: string) => {
 };
 
 export const getAuthorizedUser = async () => {
-	const resp = await fetcher(`/api/v2/user`);
+	const resp = await fetcher(`user`);
 	const data = await resp.json;
 	return data.user;
 };
 export const getTeams = async () => {
-	const resp = await fetcher(`/api/v2/team`);
+	const resp = await fetcher(`team`);
 	const data = await resp.json;
 
 	return data.teams;
 };
 
 export const getSpaces = async (team_id: string) => {
-	const response = await fetcher(`/api/v2/team/${team_id}/space`);
+	const response = await fetcher(`team/${team_id}/space`);
 	const data = await response.json;
 	return data.spaces;
 };
 
 export const getFolders = async (space_id: string) => {
-	const response = await fetcher(`/api/v2/team/space/${space_id}/folder`);
+	const response = await fetcher(`space/${space_id}/folder`);
 	const data = await response.json;
 	return data.folders;
 };
 
 export const getList = async (folder_id: string) => {
-	const response = await fetcher(`/api/v2/team/${folder_id}/space`);
+	const response = await fetcher(`folder/${folder_id}/list`);
 	const data = await response.json;
 	return data.lists;
 };
 
 export const getFolderlessList = async (space_id: string) => {
-	const response = await fetcher(`/api/v2/space/${space_id}/list`);
+	const response = await fetcher(`space/${space_id}/list`);
 	const data = await response.json;
 	return data.lists;
 };
 
 export const getTasks = async (list_id: string) => {
-	const response = await fetcher(`/api/v2/list/${list_id}/task`);
+	const response = await fetcher(`list/${list_id}/task`);
 	const data = await response.json;
 	return data.tasks;
 };
@@ -86,25 +85,25 @@ export const getTasks = async (list_id: string) => {
 export const getClickupLists = async (
 	folderId: string
 ): Promise<TAllLists[]> => {
-	const response = await fetcher(`/api/v2/folder/${folderId}/list`);
+	const response = await fetcher(`folder/${folderId}/list`);
 	const data = await response.json;
 	return data.lists;
 };
 
 export const getWorkspaceUser = async (teamId: string, userId: string) => {
-	const response = await fetcher(`/api/v2/team/${teamId}/user/${userId}`);
+	const response = await fetcher(`team/${teamId}/user/${userId}`);
 	const data = await response.json;
 	return data;
 };
 
 export const getAllFolders = async (space_id: string) => {
-	const response = await fetcher(`/api/v2/space/${space_id}/folder`);
+	const response = await fetcher(`space/${space_id}/folder`);
 	const data = await response.json;
 	return data.folders;
 };
 
 export const getListMembers = async (list_id: string): Promise<TMember[]> => {
-	const response = await fetcher(`/api/v2/list/${list_id}/member`);
+	const response = await fetcher(`list/${list_id}/member`);
 	const data = await response.json;
 	return data.members;
 };
@@ -116,7 +115,7 @@ export const createTask = async ({
 	listId: string;
 	data: TCreateTask;
 }) => {
-	const response = await fetcher(`/api/v2/list/${listId}/task`, {
+	const response = await fetcher(`list/${listId}/task`, {
 		method: "POST",
 		body: JSON.stringify(data),
 		headers: {
