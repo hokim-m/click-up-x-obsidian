@@ -74,10 +74,8 @@ export default class ClickUpPlugin extends Plugin {
 		this.addCommand({
 			id: "create-task-clickUp-selection",
 			name: "Create ClickUp task from selection",
-			// hotkeys: [{ modifiers: ["Mod" || "Ctrl", "Shift"], key: "c" }],
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
 				const sel = editor.getSelection();
-				console.log(sel, "Selection");
 				const defaultList = localStorage.getItem("selectedList");
 
 				if (!sel) {
@@ -97,9 +95,8 @@ export default class ClickUpPlugin extends Plugin {
 				try {
 					const task = await createTask({
 						data: requestData,
-						listId: list.id,
+						listId: list,
 					});
-					console.log(task);
 					if (task.err) {
 						console.log(task);
 						throw new Error(task.err);
