@@ -247,6 +247,7 @@ export class ClickUpSettingTab extends PluginSettingTab {
 			button.setButtonText("Sign In").onClick(async () => {
 				// new MainAppModal(this.plugin).open();
 				this.plugin.modal.open();
+				console.log("clicked");
 			})
 		);
 	}

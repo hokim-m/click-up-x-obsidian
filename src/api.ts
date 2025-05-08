@@ -2,21 +2,25 @@ import { TAllLists, TCreateTask, TMember } from "src/interfaces/api.types";
 import { Notice, requestUrl } from "obsidian";
 
 const fetcher = (url: string, options: RequestInit = {}) => {
+	console.log({ url: `https://api.clickup.com/api/v2/${url}` });
 	const token = localStorage.getItem("click_up_token") as string;
 	const request = requestUrl({
-		url: `https://app.clickup.com/api/v2/${url}`,
+		contentType: "application/json",
+		url: `https://api.clickup.com/api/v2/${url}`,
 		headers: {
 			Authorization: token,
-			"Content-Type": "application/json",
+			"Grant Type": "Authorization Code",
 		},
 		method: options.method,
 		body: options.body as string,
+		throw: true,
 	});
 	return request;
 };
 
 export const getToken = async (code: string) => {
 	if (!code) return "MISSING_CODE";
+	console.log({ code });
 	const CLICK_UP_CLIENT = process.env.CLICK_UP_CLIENT ?? "";
 	const CLICK_UP_SECRET = process.env.CLICK_UP_SECRET ?? "";
 	const query = new URLSearchParams({
@@ -29,10 +33,31 @@ export const getToken = async (code: string) => {
 		const resp = await fetcher(`oauth/token?${query}`, {
 			method: "POST",
 		});
-		const data = (await resp.json) as {
+
+		let responseBody: any = null;
+
+		try {
+			// Try parsing the response
+			responseBody = await resp.json;
+		} catch (jsonErr) {
+			console.error("Failed to parse JSON response", jsonErr);
+		}
+
+		// Log both success and error scenarios
+		// console.log("Response log:", {
+		// 	response: resp.json
+		// });
+
+		// if (!resp.ok) {
+		// 	throw new Error(`Request failed with status ${resp.status}`);
+		// }
+
+		// Extract and use token
+		const data = responseBody as {
 			access_token: string;
 			type: string;
 		};
+
 		localStorage.setItem("click_up_token", data.access_token);
 		return data.access_token;
 	} catch (error: any) {
