@@ -1,3 +1,5 @@
+![Untitled video - Made with Clipchamp (3)](https://github.com/user-attachments/assets/c5c88f4c-99ba-4410-9064-5eecc7aeb004)
+
 # Sync ClickUp Plugin
 
 Plugin to connect your ClickUp workspace notes
