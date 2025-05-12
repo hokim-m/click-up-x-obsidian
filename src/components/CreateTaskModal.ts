@@ -6,56 +6,41 @@ import {
 	createSelectWithOptions,
 	getElementValue,
 	validateForm,
-} from "./utils";
+} from "../utils";
 import {
 	firstAssigneeOption,
 	firstListOption,
 	prioritySelectOptions,
 } from "./constants";
-import {
-	createTask,
-	getAllFolders,
-	getFolderlessList,
-	getList,
-	getListMembers,
-	getSpaces,
-} from "src/api";
-import { IList, TCreateTask, TMember } from "src/interfaces/api.types";
-import ClickUpPlugin from "src/main";
+import { IList, TCreateTask, TMember } from "../interfaces";
+import ClickUpPlugin from "../main";
+import { ApiService, AuthService, TaskService } from "../services";
 
 export class CreateTaskModal extends Modal {
 	plugin: ClickUpPlugin;
+	private apiService: ApiService;
+	private authService: AuthService;
+	private taskService: TaskService;
+
 	constructor(plugin: ClickUpPlugin) {
 		super(plugin.app);
 		this.plugin = plugin;
+		this.apiService = ApiService.getInstance();
+		this.authService = AuthService.getInstance();
+		this.taskService = TaskService.getInstance();
 		this.configureListsLocally();
 	}
+
 	async loadLists(): Promise<IList[]> {
 		const { teams } = this.plugin.settings;
-		const lists: IList[] = [];
-		for (const team of teams) {
-			const spaces = await getSpaces(team.id);
-			for (const space of spaces) {
-				const folders = await getAllFolders(space.id);
+		return await this.authService.loadAllLists(teams);
+	}
 
-				for (const folder of folders || []) {
-					const fList = (await getList(folder.id)) || [];
-					fList.forEach((l: any) =>
-						lists.push({ name: l.name, id: l.id })
-					);
-				}
-				const folderless = (await getFolderlessList(space.id)) || [];
-				folderless.forEach((l: any) =>
-					lists.push({ name: l.name, id: l.id })
-				);
-			}
-		}
-		return lists;
-	}
 	async configureListsLocally() {
-		const lists: IList[] = await this.loadLists();
-		localStorage.setItem("lists", JSON.stringify(lists));
+		const { teams } = this.plugin.settings;
+		await this.authService.configureListsLocally(teams);
 	}
+
 	async onOpen() {
 		const { contentEl } = this;
 		let listSelects: { value: string | number; text: string }[] | null =
@@ -71,18 +56,22 @@ export class CreateTaskModal extends Modal {
 			}));
 			contentEl.removeChild(loading);
 		} catch (error) {
-			loading.textContent = "Something get wrong";
+			loading.textContent = "Something went wrong";
 		}
+
 		if (!listSelects) {
 			return;
 		}
-		let listMember: TMember[] = [];
 
+		let listMember: TMember[] = [];
 		const listSelectOptions = [firstListOption, ...listSelects];
 
 		const container = document.createElement("div");
+		container.classList.add("task-modal-container");
+
 		const title = document.createElement("h2");
 		title.textContent = "Create task";
+		title.classList.add("task-modal-title");
 		container.appendChild(title);
 
 		const listSelect = createSelectWithOptions(
@@ -90,10 +79,14 @@ export class CreateTaskModal extends Modal {
 			"Select list",
 			true
 		);
+		listSelect.element.classList.add("createSelectWithOptions");
+
 		const assigneeSelectOptions = [firstAssigneeOption, ...listMember];
 
 		listSelect.element.addEventListener("change", async () => {
-			const members = await getListMembers(listSelect.element.value);
+			const members = await this.apiService.getListMembers(
+				listSelect.element.value
+			);
 
 			listMember = members.map((member) => ({
 				...member,
@@ -102,7 +95,7 @@ export class CreateTaskModal extends Modal {
 			}));
 
 			assigneeSelectOptions.length = 0;
-			assigneeSelectOptions.push(...[firstAssigneeOption, ...listMember]);
+			assigneeSelectOptions.push(...[...listMember]);
 
 			// Refresh the assigneeSelect with updated options
 			assigneeSelectOptions.map((option) =>
@@ -119,6 +112,7 @@ export class CreateTaskModal extends Modal {
 			"Select assignee",
 			true
 		);
+
 		const prioritySelect = createSelectWithOptions(
 			prioritySelectOptions,
 			"Select priority",
@@ -148,9 +142,8 @@ export class CreateTaskModal extends Modal {
 
 		containerChilds.forEach((child: any) => {
 			const wrapperDiv = document.createElement("div");
-
+			wrapperDiv.classList.add("input-container");
 			applyStylesToContainer(wrapperDiv, child);
-
 			container.appendChild(wrapperDiv);
 			container.appendChild(document.createElement("br"));
 		});
@@ -183,9 +176,11 @@ export class CreateTaskModal extends Modal {
 				errorMessage.toggleClass("errorMessageHide", false);
 			}
 		});
+
 		const submitContainer = container.createEl("div", {
 			cls: "submit-container",
 		});
+		submitContainer.classList.add("submitContainer");
 		submitContainer.appendChild(submitButton);
 		container.appendChild(submitContainer);
 		contentEl.appendChild(container);
@@ -218,21 +213,16 @@ export class CreateTaskModal extends Modal {
 		};
 
 		try {
-			await createTask({
-				data: requestData,
-				listId: list,
-			});
-			console.log({
-				data: requestData,
-				listId: list,
-			});
+			const result = await this.taskService.createTask(list, requestData);
+
+			if (result.error) {
+				throw new Error(result.error.message);
+			}
+
 			btn.textContent = "Success";
 			btn.toggleClass("createTaskSucces", true);
-
-			new Notice("Created new task!", 3000);
-
+			// new Notice("Created new task!", 3000);
 			this.close();
-
 			this.plugin.syncronizeListNote(list);
 		} catch (error) {
 			console.log(error);

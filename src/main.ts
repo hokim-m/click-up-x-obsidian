@@ -2,18 +2,22 @@ import { CreateTaskModal } from "./components/CreateTaskModal";
 import { Editor, MarkdownView, Notice, Plugin } from "obsidian";
 import { MainAppModal } from "./signIn";
 import "../styles.css";
+import { SigninRequiredModal } from "./components/SigninRequired";
+import { ClickUpSettingTab } from "./settings";
+import { createTable } from "./utils";
 import {
-	createTask,
-	getAuthorizedUser,
-	getTasks,
-	getTeams,
-	showError,
-} from "./api";
+	ApiService,
+	AuthService,
+	StorageService,
+	TaskService,
+} from "./services";
+import {
+	ClickUpPluginSettings,
+	DEFAULT_SETTINGS,
+	TCreateTask,
+} from "./interfaces";
 import * as dotenv from "dotenv";
-import { SigninRequiredModal } from "src/components/SigninRequired";
-import { ClickUpSettingTab } from "src/settings";
-import { createTable } from "src/components/utils";
-import { TCreateTask } from "./interfaces/api.types";
+
 dotenv.config({
 	debug: false,
 });
@@ -23,95 +27,96 @@ type TClickUpRedirectParams = {
 	code: string;
 };
 
-interface ClickUpPluginSettings {
-	user: any;
-	teams: any[];
-	token: string;
-	teamId: string;
-}
-
-const DEFAULT_SETTINGS: Partial<ClickUpPluginSettings> = {
-	user: null,
-	teamId: "",
-	teams: [],
-	token: "",
-};
-
 export default class ClickUpPlugin extends Plugin {
 	settings: ClickUpPluginSettings;
 	settingsTab: ClickUpSettingTab;
 	modal: MainAppModal;
+	apiService: ApiService;
+	authService: AuthService;
+	storageService: StorageService;
+	taskService: TaskService;
+
 	async onload() {
+		// Initialize services
+		this.apiService = ApiService.getInstance();
+		this.authService = AuthService.getInstance();
+		this.storageService = StorageService.getInstance();
+		this.taskService = TaskService.getInstance();
+
+		// Register settings tab
 		this.settingsTab = new ClickUpSettingTab(this.app, this);
 		this.addSettingTab(this.settingsTab);
+
+		// Register protocol handler
 		this.registerObsidianProtocolHandler("ClickUpPlugin", async (e) => {
 			const parameters = e as TClickUpRedirectParams;
-			localStorage.setItem("CLICK_UP_CODE", parameters.code);
+			this.storageService.setCode(parameters.code);
 		});
 
+		// Load settings and init
 		await this.loadSettings();
 		this.modal = new MainAppModal(this);
-		if (!Boolean(localStorage.getItem("click_up_token"))) {
+
+		// Check auth status
+		if (!this.authService.isAuthenticated()) {
 			this.logOut();
 		} else {
 			this.saveSettings();
 			this.settingsTab.renderSettings();
-
-			this.fetchUser(JSON.stringify(localStorage.getItem("token")));
+			this.fetchUser(JSON.stringify(this.storageService.getToken()));
 		}
 
+		// Register commands
 		this.addCommand({
 			id: "manual-create-task-clickUp",
 			name: "Create ClickUp task",
+			// hotkeys: [{ modifiers: ["Ctrl", "Shift"], key: "c" }],
 			callback: async () => {
-				if (!localStorage.getItem("click_up_token")) {
-					new SigninRequiredModal(this.app).open();
+				if (!this.authService.isAuthenticated()) {
+					new SigninRequiredModal(this.app, this).open();
 				} else {
 					new CreateTaskModal(this).open();
 				}
 			},
 		});
+
 		this.addCommand({
 			id: "create-task-clickUp-selection",
 			name: "Create ClickUp task from selection",
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
 				const sel = editor.getSelection();
-				const defaultList = localStorage.getItem("selectedList");
+				const defaultList = this.storageService.getSelectedList();
 
 				if (!sel) {
 					return;
 				}
+
 				if (!defaultList) {
 					new Notice("Please select a sheet in settings");
 					return;
 				}
-				const list = JSON.parse(defaultList);
-				const requestData: TCreateTask = {
-					name: sel,
-					description: "",
-					assignees: [],
-					priority: 3,
-				};
+
 				try {
-					const task = await createTask({
-						data: requestData,
-						listId: list,
-					});
-					if (task.err) {
-						console.log(task);
-						throw new Error(task.err);
+					const task = await this.taskService.createTaskFromSelection(
+						sel,
+						defaultList.id
+					);
+
+					if (!task.error) {
+						setTimeout(() => {
+							editor.replaceRange(
+								` [task](${task.url})`,
+								editor.getCursor("to")
+							);
+							new Notice("Created new task!", 3000);
+							// this.syncronizeListNote(defaultList.id);
+						}, 100);
+					} else if (!task.error.isAuth) {
+						this.logOut();
 					}
-					setTimeout(() => {
-						editor.replaceRange(
-							` [task](${task.url})`,
-							editor.getCursor("to")
-						);
-						new Notice("Created new task!", 3000);
-						this.syncronizeListNote(list.id);
-					}, 100);
-				} catch (err) {
-					const handlerorr = await showError(err);
-					if (!handlerorr.isAuth) {
+				} catch (err: any) {
+					const errorResponse = await this.apiService.showError(err);
+					if (!errorResponse.isAuth) {
 						this.logOut();
 					}
 				}
@@ -123,18 +128,16 @@ export default class ClickUpPlugin extends Plugin {
 		this.clearUser();
 		this.settingsTab.renderSignIn();
 	}
+
 	async fetchUser(token: string) {
-		const user = await getAuthorizedUser();
-		const teams = await getTeams();
+		const user = await this.apiService.getAuthorizedUser();
+		const teams = await this.apiService.getTeams();
 		await this.saveData({ user, token, teams });
 		await this.loadSettings();
 	}
 
 	async clearUser() {
-		localStorage.removeItem("lists");
-		localStorage.removeItem("selectedList");
-		localStorage.removeItem("click_up_token");
-		localStorage.removeItem("selectedSpace");
+		this.storageService.clearAllData();
 		await this.saveData({ token: null, user: null, teams: [] });
 	}
 
@@ -162,25 +165,19 @@ export default class ClickUpPlugin extends Plugin {
 		}
 
 		const vault = this.app.vault;
-		const tasks = await getTasks(id);
-		const rows = tasks.map((task: any, index: any) => {
-			return {
-				// id: task.id,
-				order: index + 1,
-				name: task.name,
-				status: task.status.status,
-				date_created: new Date(
-					Number(task.date_created)
-				).toLocaleString("en-US"),
-				creator: task.creator.username,
-				assignees: task.assignees.map((u: any) => u.username),
-				priority: task?.priority?.priority ?? "Low",
-			};
-		});
+		const tasks = await this.apiService.getTasks(id);
+		const rows = this.taskService.formatTasksForTable(tasks);
 		const tableHTML = createTable(rows);
 		const filePath = note!.path.toString();
 
 		vault.delete(note!);
-		vault.create(filePath, tableHTML);
+
+		try {
+			vault.create(filePath, tableHTML);
+			new Notice("List synchronized successfully", 3000);
+		} catch (error) {
+			console.error("Failed to synchronize list", error);
+			new Notice("Failed to synchronize list", 3000);
+		}
 	}
 }

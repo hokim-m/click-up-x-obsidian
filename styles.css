@@ -76,6 +76,36 @@ If your plugin does not need CSS, delete this file.
 		max-width: fit-content;
 	}
 }
+
+/* General styles */
+.signin-container,
+.task-modal-container {
+	padding: 15px;
+	margin-bottom: 20px;
+}
+
+/* SignIn component styles */
+.signin-title,
+.task-modal-title {
+	margin-bottom: 15px;
+	color: var(--text-normal);
+}
+
+.signin-description {
+	margin-bottom: 20px;
+	color: var(--text-muted);
+}
+
+.signin-steps {
+	margin-bottom: 15px;
+}
+
+.signin-step {
+	margin-bottom: 5px;
+	color: var(--text-muted);
+}
+
+/* Button styles */
 .submit-btn {
 	background-color: #4caf50;
 	color: white;
@@ -84,32 +114,76 @@ If your plugin does not need CSS, delete this file.
 	border-radius: 5px;
 	cursor: pointer;
 }
-.signBtn {
+
+.signBtn,
+.sync-button,
+.logout-button {
+	background-color: #4caf50;
+	color: white;
+	padding: 10px 20px;
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
 	margin-top: 10px;
 }
+
+.signBtn:hover,
+.submit-btn:hover,
+.sync-button:hover,
+.logout-button:hover {
+	background-color: #45a049;
+}
+
+/* Error styles */
 .error-message {
 	display: block;
 	color: red;
 	font-size: 14px;
 	margin-top: 5px;
 }
-.applyStylesToContainer {
+
+.errorMessage {
+	color: red;
+	font-size: 14px;
+}
+
+.errorMessageHide {
+	visibility: hidden;
+}
+
+/* Container styles */
+.applyStylesToContainer,
+.input-container {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
 	height: 30px;
 	width: 500px;
 	gap: 30px;
+	margin-bottom: 15px;
 }
+
+.addDefaultListSelectionEl-container {
+	display: flex !important;
+	justify-content: space-between !important;
+	align-items: center !important;
+	margin-bottom: 15px;
+	width: 500px;
+}
+
+/* Select styles */
 .createSelectWithOptions {
 	width: 200px;
 	margin-bottom: 10px;
 	border: 1px solid #ccc;
 	border-radius: 5px;
 }
+
 .largeSelect {
 	width: 300px;
 }
+
+/* Input styles */
 .createInputWithPlaceholder {
 	width: 200px;
 	padding: 8px;
@@ -117,51 +191,68 @@ If your plugin does not need CSS, delete this file.
 	border: 1px solid #ccc;
 	border-radius: 5px;
 }
+
 .largeInput {
-	width: 300px !important;
+	width: 200px !important;
 }
+
+/* Label styles */
+.input-label,
+.select-label,
+.list-selection-label,
+.space-selection-label,
+.required-label {
+	font-weight: bold;
+	color: var(--text-normal);
+}
+
+/* Form styles */
 .submitContainer {
 	text-align: right;
 	padding-right: 25px;
+	margin-top: 15px;
 }
-.errorMessage {
-	color: red;
-	font-size: 14px;
-}
-.errorMessageHide {
-	visibility: hidden;
-}
-.createTaskSucces {
-	background-color: green;
-}
-.createTaskError {
-	background-color: red;
-}
-.renderAuthrizationBtn {
-	background-color: gray;
-}
+
+/* Button state styles */
+.createTaskSucces,
 .renderAuthrizationBtnSucces {
 	background-color: green;
 }
+
+.createTaskError {
+	background-color: red;
+}
+
+.renderAuthrizationBtn,
+.forceSyncBtn {
+	background-color: gray;
+}
+
 .descriptionWrapper {
 	display: flex;
 	justify-content: space-between;
 	align-items: flex-end;
 }
-.addDefaultListSelectionEl-container {
-	display: flex !important;
-	justify-content: space-between !important;
-	align-items: center !important;
-}
+
+/* Miscellaneous */
 .wrapperList {
 	display: block !important;
 }
-.forceSyncBtn {
-	background-color: gray;
-}
+
 .teamMember {
 	margin-top: 10px;
 }
+
 .hideIcon {
 	display: none;
+}
+
+/* SignIn Required modal */
+.signin-required-container {
+	padding: 15px;
+}
+
+.signin-text {
+	color: var(--text-muted);
+	margin-top: 10px;
 }

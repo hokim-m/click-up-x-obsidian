@@ -1,3 +1,12 @@
+/**
+ * @deprecated This file is deprecated and will be removed in the future.
+ * Use services from src/services instead:
+ * - ApiService for API calls
+ * - AuthService for authentication
+ * - TaskService for task operations
+ * - StorageService for storage operations
+ */
+
 import { TAllLists, TCreateTask, TMember } from "src/interfaces/api.types";
 import { Notice, requestUrl } from "obsidian";
 

@@ -1,98 +1,77 @@
 import { Modal, Notice } from "obsidian";
-import {
-	getAllFolders,
-	getFolderlessList,
-	getList,
-	getSpaces,
-	getToken,
-} from "./api";
-import { SIGNIN_STEPS } from "src/components/constants";
-import { createInputWithPlaceholder } from "src/components/utils";
+import { SIGNIN_STEPS } from "./components/constants";
+import { createInputWithPlaceholder } from "./utils";
 import ClickUpPlugin from "./main";
 import "../styles.css";
-interface ISpace {
-	name: string;
-	id: string;
-}
-interface IList {
-	name: string;
-	id: string;
-}
+import { IList, ISpace } from "./interfaces";
+import { AuthService, StorageService } from "./services";
 
 export class MainAppModal extends Modal {
 	result: string;
 	plugin: ClickUpPlugin;
 	onSubmit: (result: string) => void;
+	private authService: AuthService;
+	private storageService: StorageService;
+
 	constructor(plugin: ClickUpPlugin) {
 		super(plugin.app);
 		this.plugin = plugin;
-		this.renderAuthrization();
+		this.authService = AuthService.getInstance();
+		this.storageService = StorageService.getInstance();
+		this.renderAuthorization();
 	}
 
 	async loadSpaces(): Promise<ISpace[]> {
 		const { teams } = this.plugin.settings;
-
-		const spaces: ISpace[] = [];
-		for (const team of teams) {
-			const sps = await getSpaces(team.id);
-			sps.forEach((sp: any) => spaces.push({ name: sp.name, id: sp.id }));
-		}
-
-		return spaces;
+		return await this.authService.loadAllSpaces(teams);
 	}
 
 	async configureListsLocally() {
-		const lists: IList[] = await this.loadLists();
-		localStorage.setItem("lists", JSON.stringify(lists));
+		const { teams } = this.plugin.settings;
+		await this.authService.configureListsLocally(teams);
 	}
+
 	async loadLists(): Promise<IList[]> {
 		const { teams } = this.plugin.settings;
-		const lists: IList[] = [];
-		for (const team of teams) {
-			const spaces = await getSpaces(team.id);
-			for (const space of spaces) {
-				const folders = await getAllFolders(space.id);
-
-				for (const folder of folders || []) {
-					const fList = (await getList(folder.id)) || [];
-					fList.forEach((l: any) =>
-						lists.push({ name: l.name, id: l.id })
-					);
-				}
-				const folderless = (await getFolderlessList(space.id)) || [];
-				folderless.forEach((l: any) =>
-					lists.push({ name: l.name, id: l.id })
-				);
-			}
-		}
-		return lists;
+		return await this.authService.loadAllLists(teams);
 	}
 
-	renderAuthrization() {
+	renderAuthorization() {
 		const { contentEl } = this;
 		contentEl.empty();
 
 		const plugin = this.plugin;
 
 		const container = document.createElement("div");
+		container.classList.add("signin-container");
+
 		const title = document.createElement("h1");
+		title.classList.add("signin-title");
+
 		const description = document.createElement("p");
+		description.classList.add("signin-description");
+
 		const button = document.createElement("button");
+		button.classList.add("signBtn");
+
 		const steps = document.createElement("div");
+		steps.classList.add("signin-steps");
+
 		const input = createInputWithPlaceholder("Code", "Enter code", true);
+		input.element.classList.add("createInputWithPlaceholder");
 
 		SIGNIN_STEPS.forEach((stepItem) => {
 			const step = document.createElement("p");
 			step.textContent = stepItem;
+			step.classList.add("signin-step");
 			steps.appendChild(step);
 		});
 
-		// Step 2: Set content and attributes
 		title.textContent = "Click Up sync";
 		description.textContent =
-			"We need to retreive authroized token from ClickUp to start syncronizing your tasks from Obsidian notes";
+			"We need to retrieve authorization token from ClickUp to start synchronizing your tasks from Obsidian notes";
 		button.textContent = "Sign In";
-		button.classList.add("signBtn");
+
 		button.addEventListener("click", async () => {
 			const inputValue = input.element.value;
 
@@ -110,19 +89,18 @@ export class MainAppModal extends Modal {
 				button.textContent = "Loading...";
 				button.classList.add("renderAuthrizationBtn");
 
-				token = await getToken(inputValue);
+				token = await this.authService.authenticate(inputValue);
 				if (token) {
 					await plugin.fetchUser(token);
 					button.toggleClass("renderAuthrizationBtnSucces", true);
 					button.textContent = "Success";
-					new Notice("Succes", 3000);
+					new Notice("Success", 3000);
 					this.plugin.settingsTab.renderSettings();
 					this.close();
 				}
 			}
 		});
 
-		// Step 3: Append elements to parent element
 		steps.appendChild(input.element);
 		container.appendChild(title);
 		container.appendChild(description);
@@ -131,11 +109,14 @@ export class MainAppModal extends Modal {
 		contentEl.appendChild(container);
 	}
 
-	async addDefaultListSelectionEl(wrapper: any) {
-		const selectedSpace = localStorage.getItem("selectedList");
+	async addDefaultListSelectionEl(wrapper: HTMLElement) {
+		const selectedList = this.storageService.getSelectedList();
 		const selectThisListContent = document.createElement("p");
+		selectThisListContent.classList.add("list-selection-label");
+
 		const disabledOption = document.createElement("option");
 		const listSelect = document.createElement("select");
+		listSelect.classList.add("createSelectWithOptions", "largeSelect");
 
 		selectThisListContent.textContent = "Select default list";
 
@@ -153,22 +134,18 @@ export class MainAppModal extends Modal {
 				option.id = list.id;
 				listSelect.appendChild(option);
 			});
-			if (selectedSpace) {
-				try {
-					const parsed = JSON.parse(selectedSpace);
-					listSelect.value = parsed.name;
-				} catch (e: any) {
-					localStorage.removeItem("selectedList");
-				}
+
+			if (selectedList) {
+				listSelect.value = selectedList.name;
 			}
 		}, 1);
 
 		listSelect.addEventListener("change", () => {
 			const id = listSelect.options[listSelect.selectedIndex].id;
-			localStorage.setItem(
-				"selectedList",
-				JSON.stringify({ name: listSelect.value, id })
-			);
+			this.storageService.setSelectedList({
+				name: listSelect.value,
+				id,
+			});
 		});
 
 		const container = document.createElement("div");
@@ -178,11 +155,14 @@ export class MainAppModal extends Modal {
 		wrapper.appendChild(container);
 	}
 
-	async addSpacesSelectionEl(wrapper: any) {
-		const selectedSpace = localStorage.getItem("selectedSpace");
+	async addSpacesSelectionEl(wrapper: HTMLElement) {
+		const selectedSpace = this.storageService.getSelectedSpace();
 		const selectThisListContent = document.createElement("p");
+		selectThisListContent.classList.add("space-selection-label");
+
 		const disabledOption = document.createElement("option");
 		const listSelect = document.createElement("select");
+		listSelect.classList.add("createSelectWithOptions", "largeSelect");
 
 		selectThisListContent.textContent = "Select workspace";
 
@@ -200,22 +180,20 @@ export class MainAppModal extends Modal {
 				option.id = space.id;
 				listSelect.appendChild(option);
 			});
+
 			if (selectedSpace) {
-				try {
-					const parsed = JSON.parse(selectedSpace);
-					listSelect.value = parsed.name;
-				} catch (e: any) {
-					localStorage.removeItem("selectedSpace");
-				}
+				listSelect.value = selectedSpace.name;
 			}
 		}, 100);
+
 		listSelect.addEventListener("change", () => {
 			const id = listSelect.options[listSelect.selectedIndex].id;
-			localStorage.setItem(
-				"selectedSpace",
-				JSON.stringify({ name: listSelect.value, id })
-			);
+			this.storageService.setSelectedSpace({
+				name: listSelect.value,
+				id,
+			});
 		});
+
 		const container = document.createElement("div");
 		container.appendChild(selectThisListContent);
 		container.appendChild(listSelect);
