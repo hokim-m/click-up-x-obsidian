@@ -1,6 +1,6 @@
 {
 	"name": "click-up-sync",
-	"version": "0.6.3",
+	"version": "0.6.4",
 	"description": "Sync ClickUp workspace & tasks",
 	"main": "main.js",
 	"scripts": {
